@@ -8,17 +8,13 @@
    - Environments: .env.local
 
  ✓ Starting...
- ✓ Ready in 1590ms
- ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ✓ Ready in 1038ms
  ○ Compiling /admin ...
- ✓ Compiled /admin in 2.2s (813 modules)
- ⚠ Fast Refresh had to perform a full reload due to a runtime error.
- GET /admin 200 in 2487ms
- GET /admin 200 in 123ms
- ✓ Compiled / in 431ms (821 modules)
- GET / 200 in 655ms
- GET /admin 200 in 40ms
- GET / 200 in 42ms
- GET / 200 in 39ms
- GET / 200 in 41ms
- GET /admin 200 in 17ms
+ ✓ Compiled / in 2.6s (825 modules)
+ GET / 200 in 2532ms
+ GET /admin 200 in 2968ms
+ GET /admin 200 in 37ms
+ ✓ Compiled /api/tahvel/sync in 193ms (846 modules)
+ POST /api/tahvel/sync 200 in 681ms
+ GET / 200 in 48ms
+ GET /admin 200 in 22ms

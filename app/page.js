@@ -21,7 +21,8 @@ export default async function Page({ searchParams }) {
         </header>
         <div className="empty-state">
           <b>Пока ни одной недели</b>
-          Загрузите PDF-выгрузку расписания в <Link href="/admin">админке</Link>.
+          Синхронизируйте расписание с Tahvel в <Link href="/admin">админке</Link> — или загрузите
+          PDF-выгрузку.
         </div>
       </main>
     );
@@ -71,7 +72,10 @@ export default async function Page({ searchParams }) {
 
       <footer>
         <span>Источник: {week.fileName}</span>
-        <span>Загружено {new Date(week.uploadedAt).toLocaleDateString("ru-RU")}</span>
+        <span>
+          {week.source === "tahvel" ? "Обновлено" : "Загружено"}{" "}
+          {new Date(week.uploadedAt).toLocaleDateString("ru-RU")}
+        </span>
         <span>Урок = 45 мин · пунктир внутри блока = граница урока</span>
         <Link href="/admin">Админка</Link>
       </footer>

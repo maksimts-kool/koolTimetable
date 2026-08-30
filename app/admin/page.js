@@ -3,6 +3,7 @@ import AdminPanel from "@/components/AdminPanel";
 import LoginForm from "@/components/LoginForm";
 import { adminConfigured, isAdmin } from "@/lib/auth";
 import { driverName, listWeeks } from "@/lib/store";
+import { targetGroup } from "@/lib/tahvel";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export default async function AdminPage() {
           <p className="eyebrow">Tunniplaan · управление</p>
           <h1>
             Админка
-            <span className="grp">Загрузка PDF-расписаний и список недель</span>
+            <span className="grp">Синхронизация с Tahvel, загрузка PDF и список недель</span>
           </h1>
         </div>
         <div className="right">
@@ -38,7 +39,7 @@ export default async function AdminPage() {
           </p>
         </div>
       ) : admin ? (
-        <AdminPanel weeks={weeks} driver={driverName()} />
+        <AdminPanel weeks={weeks} driver={driverName()} group={targetGroup().code} />
       ) : (
         <LoginForm />
       )}

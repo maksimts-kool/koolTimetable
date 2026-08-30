@@ -2,9 +2,10 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import SyncPanel from "@/components/SyncPanel";
 import { plural, ruDate } from "@/lib/format";
 
-export default function AdminPanel({ weeks, driver }) {
+export default function AdminPanel({ weeks, driver, group }) {
   const router = useRouter();
   const inputRef = useRef(null);
   const [over, setOver] = useState(false);
@@ -71,17 +72,18 @@ export default function AdminPanel({ weeks, driver }) {
 
   return (
     <>
+      <div className="form-row" style={{ justifyContent: "flex-end", marginBottom: 14 }}>
+        <button onClick={logout}>Выйти</button>
+      </div>
+
+      <SyncPanel group={group} onSynced={() => router.refresh()} />
+
       <div className="card">
-        <div className="form-row" style={{ justifyContent: "space-between", marginBottom: 14 }}>
-          <div>
-            <h2>Загрузка расписания</h2>
-            <p className="hint" style={{ margin: 0 }}>
-              PDF-выгрузка «Tunniplaan» из системы ТТК. Файл проверяется, неделя и группа читаются из
-              самого документа.
-            </p>
-          </div>
-          <button onClick={logout}>Выйти</button>
-        </div>
+        <h2>Загрузка PDF</h2>
+        <p className="hint">
+          Запасной путь: PDF-выгрузка «Tunniplaan» из ТТК — на случай, если в Tahvel группы нет или
+          её расписание закрыто. Неделя и группа читаются из самого документа.
+        </p>
 
         <div
           className={`drop${over ? " over" : ""}`}
@@ -167,7 +169,7 @@ export default function AdminPanel({ weeks, driver }) {
                 <th>Неделя</th>
                 <th>Группа</th>
                 <th>Уроков</th>
-                <th>Файл</th>
+                <th>Источник</th>
                 <th>Загружено</th>
                 <th />
               </tr>
