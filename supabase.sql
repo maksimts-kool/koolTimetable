@@ -1,7 +1,7 @@
 -- Таблица недель. Выполнить один раз в Supabase → SQL Editor.
 
 create table if not exists public.weeks (
-  id           text primary key,          -- «M-TARpv24_2026-08-31»
+  id           text primary key,          -- «TARpv24_2026-08-31»
   group_name   text not null,
   programme    text,
   week_start   date not null,
