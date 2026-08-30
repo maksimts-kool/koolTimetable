@@ -1,4 +1,5 @@
 import Link from "next/link";
+import IcalLink from "@/components/IcalLink";
 import Timetable from "@/components/Timetable";
 import WeekPicker from "@/components/WeekPicker";
 import { getWeek, listWeeks } from "@/lib/store";
@@ -77,6 +78,7 @@ export default async function Page({ searchParams }) {
           {new Date(week.uploadedAt).toLocaleDateString("ru-RU")}
         </span>
         <span>Урок = 45 мин · пунктир внутри блока = граница урока</span>
+        <IcalLink />
         <Link href="/admin">Админка</Link>
       </footer>
     </main>

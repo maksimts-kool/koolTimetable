@@ -132,6 +132,11 @@ footer{
   font-size:11.5px;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:6px 18px
 }
 footer a{text-decoration:none;border-bottom:1px solid var(--hair)}
+.ical{display:inline-flex;gap:10px;align-items:baseline}
+.ical button{
+  font:inherit;color:var(--ink-3);background:none;border:0;padding:0;cursor:pointer;
+  border-bottom:1px solid var(--hair)
+}
 
 /* ---------- админка ---------- */
 .card{
