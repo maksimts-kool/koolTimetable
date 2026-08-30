@@ -47,7 +47,11 @@ export async function POST(request) {
   try {
     week = await parseTimetablePdf(bytes);
   } catch (e) {
-    if (e instanceof ParseError) return fail(e.message, 422, { code: e.code });
+    if (e instanceof ParseError) {
+      // причина от pdf.js нужна в логах, но наружу её не отдаём
+      if (e.cause) console.error("pdf open failed", e.cause);
+      return fail(e.message, 422, { code: e.code });
+    }
     console.error("parse failed", e);
     return fail("Не удалось разобрать расписание из этого PDF.", 422);
   }
