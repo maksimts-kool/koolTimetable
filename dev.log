@@ -1,0 +1,24 @@
+
+> tunniplaan@1.0.0 dev
+> next dev -p 3210
+
+   ▲ Next.js 15.5.24
+   - Local:        http://localhost:3210
+   - Network:      http://100.64.58.124:3210
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1590ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ○ Compiling /admin ...
+ ✓ Compiled /admin in 2.2s (813 modules)
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /admin 200 in 2487ms
+ GET /admin 200 in 123ms
+ ✓ Compiled / in 431ms (821 modules)
+ GET / 200 in 655ms
+ GET /admin 200 in 40ms
+ GET / 200 in 42ms
+ GET / 200 in 39ms
+ GET / 200 in 41ms
+ GET /admin 200 in 17ms

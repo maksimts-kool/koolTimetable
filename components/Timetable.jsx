@@ -1,0 +1,209 @@
+"use client";
+
+import { useMemo } from "react";
+import FullCalendar from "@fullcalendar/react";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import listPlugin from "@fullcalendar/list";
+import { assignColors } from "@/lib/colors";
+import { plural } from "@/lib/format";
+
+const ET_WEEKDAYS = ["Pühapäev", "Esmaspäev", "Teisipäev", "Kolmapäev", "Neljapäev", "Reede", "Laupäev"];
+const LESSON_MINUTES = 45;
+
+const toMinutes = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+const iso = (dmy) => {
+  const [d, m, y] = dmy.split(".");
+  return `${y}-${m}-${d}`;
+};
+const isoOfDate = (date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+const hhmm = (minutes) =>
+  `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+
+/** Перерыв ≥30 мин, попадающий в обеденное окно, — рисуем как «Lõuna». */
+function lunchGaps(days) {
+  const gaps = [];
+  for (const day of days) {
+    const sorted = [...day.blocks].sort((a, b) => toMinutes(a.from) - toMinutes(b.from));
+    for (let i = 1; i < sorted.length; i++) {
+      const from = toMinutes(sorted[i - 1].to);
+      const to = toMinutes(sorted[i].from);
+      if (to - from >= 30 && from >= 11 * 60 && to <= 14 * 60) {
+        gaps.push({ date: iso(day.date), from: hhmm(from), to: hhmm(to) });
+      }
+    }
+  }
+  return gaps;
+}
+
+export default function Timetable({ week }) {
+  const model = useMemo(() => {
+    const events = [];
+    const subjects = new Map();
+    const palette = assignColors(week.days.flatMap((d) => d.blocks.map((b) => b.subject)));
+    let earliest = 24 * 60;
+    let latest = 0;
+    const weekdaysWithLessons = new Set();
+
+    for (const day of week.days) {
+      const date = iso(day.date);
+      weekdaysWithLessons.add(new Date(`${date}T12:00:00`).getDay());
+
+      for (const block of day.blocks) {
+        const color = palette.get(block.subject);
+        earliest = Math.min(earliest, toMinutes(block.from));
+        latest = Math.max(latest, toMinutes(block.to));
+
+        const stat = subjects.get(block.subject) ?? { lessons: 0, teacher: block.teacher, color };
+        stat.lessons += block.lessons;
+        subjects.set(block.subject, stat);
+
+        events.push({
+          start: `${date}T${block.from}:00`,
+          end: `${date}T${block.to}:00`,
+          title: block.subject,
+          backgroundColor: color.bg,
+          borderColor: color.border,
+          textColor: "#fff",
+          extendedProps: { ...block },
+        });
+      }
+    }
+
+    for (const gap of lunchGaps(week.days)) {
+      events.push({
+        start: `${gap.date}T${gap.from}:00`,
+        end: `${gap.date}T${gap.to}:00`,
+        display: "background",
+        classNames: ["lunch"],
+        title: gap.date === iso(week.days[0].date) ? "Lõuna" : "",
+      });
+    }
+
+    const busyDates = new Set(week.days.map((d) => iso(d.date)));
+    const hiddenDays = [0, 6].filter((d) => !weekdaysWithLessons.has(d));
+    const lessons = [...subjects.values()].reduce((sum, s) => sum + s.lessons, 0);
+
+    return {
+      events,
+      busyDates,
+      hiddenDays,
+      lessons,
+      minTime: `${String(Math.floor(Math.max(earliest - 30, 0) / 60)).padStart(2, "0")}:00:00`,
+      maxTime: `${hhmm(Math.min(latest + 15, 23 * 60 + 45))}:00`,
+      subjects: [...subjects.entries()].sort((a, b) => b[1].lessons - a[1].lessons),
+    };
+  }, [week]);
+
+  const isNarrow = typeof window !== "undefined" && window.matchMedia("(max-width:820px)").matches;
+
+  return (
+    <>
+      <div className="board">
+        <FullCalendar
+          /* key: initialDate применяется только при монтировании, поэтому при
+             смене недели календарь пересоздаём — иначе он остался бы на прежних датах */
+          key={week.id}
+          plugins={[timeGridPlugin, listPlugin]}
+          initialView={isNarrow ? "listWeek" : "timeGridWeek"}
+          initialDate={week.weekStart}
+          firstDay={1}
+          hiddenDays={model.hiddenDays}
+          headerToolbar={false}
+          allDaySlot={false}
+          nowIndicator
+          height="auto"
+          expandRows
+          slotMinTime={model.minTime}
+          slotMaxTime={model.maxTime}
+          slotDuration="00:15:00"
+          slotLabelInterval="01:00:00"
+          slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
+          eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
+          noEventsText="На эту неделю занятий нет"
+          events={model.events}
+          windowResize={(arg) =>
+            arg.view.calendar.changeView(
+              window.matchMedia("(max-width:820px)").matches ? "listWeek" : "timeGridWeek"
+            )
+          }
+          dayHeaderContent={(arg) => {
+            const date = isoOfDate(arg.date);
+            const free = !model.busyDates.has(date);
+            const [y, m, d] = date.split("-");
+            return (
+              <div className={`dayhead${free ? " free" : ""}`}>
+                <span className="dn">{ET_WEEKDAYS[arg.date.getDay()]}</span>
+                <span className={free ? "free-tag" : "dd"}>{free ? "Tunde pole" : `${d}.${m}.${y}`}</span>
+              </div>
+            );
+          }}
+          eventContent={(arg) => {
+            const p = arg.event.extendedProps;
+            if (arg.event.display === "background") {
+              return <div className="fc-event-title">{arg.event.title}</div>;
+            }
+            if (arg.view.type === "listWeek") {
+              return (
+                <div>
+                  <div className="lname">{arg.event.title}</div>
+                  <div className="lmeta">
+                    {[p.teacher, p.room, p.lessons > 1 ? plural(p.lessons) : null, p.groups]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </div>
+                </div>
+              );
+            }
+            const span = toMinutes(p.to) - toMinutes(p.from);
+            return (
+              <div className="ev">
+                <div className="t">
+                  {p.from} – {p.to}
+                </div>
+                <div className="name">{arg.event.title}</div>
+                {p.groups && p.groups.includes(",") ? <div className="shared">{p.groups}</div> : null}
+                <div className="meta">
+                  <span>{p.teacher}</span>
+                  <span className="room">{p.room}</span>
+                </div>
+                {p.lessons > 1 ? <div className="n">{p.lessons}×</div> : null}
+                {(p.marks ?? []).map((mark) => (
+                  <div
+                    key={mark}
+                    className="tick"
+                    style={{ top: `${((toMinutes(mark) - toMinutes(p.from)) / span) * 100}%` }}
+                  />
+                ))}
+              </div>
+            );
+          }}
+        />
+      </div>
+
+      <section className="legend">
+        <h2>Предметы недели</h2>
+        <div className="subs">
+          {model.subjects.map(([name, stat]) => {
+            const minutes = stat.lessons * LESSON_MINUTES;
+            const h = Math.floor(minutes / 60);
+            const m = minutes % 60;
+            return (
+              <div className="sub" key={name}>
+                <div className="swatch" style={{ background: stat.color.bg }} />
+                <div>
+                  <div className="name">{name}</div>
+                  <div className="who">{stat.teacher}</div>
+                </div>
+                <div className="hrs">
+                  {stat.lessons} × 45′ · {h ? `${h} ч` : ""}
+                  {m ? `${h ? " " : ""}${m} мин` : ""}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    </>
+  );
+}
