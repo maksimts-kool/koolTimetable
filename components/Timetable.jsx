@@ -24,7 +24,7 @@ const NARROW = "(max-width:820px)";
 // Это оценка — она лишь резервирует место, итоговый размер календарь всё равно
 // задаёт себе сам.
 const DAY_HEADER_PX = 60;
-const SLOT_PX = 23;
+const SLOT_PX = 25;
 const SLOT_MINUTES = 15;
 
 /** Воскресенье = 0 у JS, а нам нужен понедельник = 0. */
@@ -210,26 +210,18 @@ export default function Timetable({ week, allSubjects }) {
                 </div>
               );
             }
-            const span = toMinutes(p.to) - toMinutes(p.from);
             return (
               <div className="ev">
+                <div className="name">{arg.event.title}</div>
                 <div className="t">
                   {p.from} – {p.to}
                 </div>
-                <div className="name">{arg.event.title}</div>
                 {p.groups && p.groups.includes(",") ? <div className="shared">{p.groups}</div> : null}
                 <div className="meta">
                   <span>{p.teacher}</span>
                   <span className="room">{p.room}</span>
                 </div>
                 {p.lessons > 1 ? <div className="n">{p.lessons}×</div> : null}
-                {(p.marks ?? []).map((mark) => (
-                  <div
-                    key={mark}
-                    className="tick"
-                    style={{ top: `${((toMinutes(mark) - toMinutes(p.from)) / span) * 100}%` }}
-                  />
-                ))}
               </div>
             );
           }}
@@ -244,8 +236,11 @@ export default function Timetable({ week, allSubjects }) {
             const h = Math.floor(minutes / 60);
             const m = minutes % 60;
             return (
-              <div className="sub" key={name}>
-                <div className="swatch" style={{ background: stat.color.bg }} />
+              <div
+                className="sub"
+                key={name}
+                style={{ "--fill": stat.color.bg, "--bar": stat.color.border }}
+              >
                 <div>
                   <div className="name">{name}</div>
                   <div className="who">{stat.teacher}</div>
