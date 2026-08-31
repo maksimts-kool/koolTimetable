@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
@@ -12,6 +12,20 @@ const ET_WEEKDAYS = ["Pühapäev", "Esmaspäev", "Teisipäev", "Kolmapäev", "Ne
 const ET_DAY_LETTERS = ["E", "T", "K", "N", "R", "L", "P"];
 const ET_DAY_NAMES = ET_WEEKDAYS.slice(1).concat(ET_WEEKDAYS[0]);
 const LESSON_MINUTES = 45;
+const NARROW = "(max-width:820px)";
+
+// FullCalendar рисуется только в браузере: на сервере от него не остаётся ни
+// строчки разметки. Пока он не смонтировался, место под сетку пустое, и в
+// момент появления календарь отодвигал легенду с подвалом вниз — страница
+// заметно дёргалась (CLS 0.66 при пороге «хорошо» 0.1). Поэтому высоту сетки
+// считаем заранее и держим её как min-height.
+//
+// Числа сняты с готовой сетки: шапка дней и одна пятнадцатиминутная строка.
+// Это оценка — она лишь резервирует место, итоговый размер календарь всё равно
+// задаёт себе сам.
+const DAY_HEADER_PX = 60;
+const SLOT_PX = 23;
+const SLOT_MINUTES = 15;
 
 /** Воскресенье = 0 у JS, а нам нужен понедельник = 0. */
 const weekdayIndex = (iso) => (new Date(`${iso}T12:00:00`).getDay() + 6) % 7;
@@ -101,6 +115,9 @@ export default function Timetable({ week, allSubjects }) {
       latest = 16 * 60;
     }
 
+    const minTime = `${String(Math.floor(Math.max(earliest - 30, 0) / 60)).padStart(2, "0")}:00:00`;
+    const maxTime = `${hhmm(Math.min(latest + 15, 23 * 60 + 45))}:00`;
+
     const busyDates = new Set(week.days.map((d) => iso(d.date)));
     const hiddenDays = [0, 6].filter((d) => !weekdaysWithLessons.has(d));
     const lessons = [...subjects.values()].reduce((sum, s) => sum + s.lessons, 0);
@@ -110,23 +127,45 @@ export default function Timetable({ week, allSubjects }) {
       busyDates,
       hiddenDays,
       lessons,
-      minTime: `${String(Math.floor(Math.max(earliest - 30, 0) / 60)).padStart(2, "0")}:00:00`,
-      maxTime: `${hhmm(Math.min(latest + 15, 23 * 60 + 45))}:00`,
+      minTime,
+      maxTime,
+      boardHeight: DAY_HEADER_PX + ((toMinutes(maxTime) - toMinutes(minTime)) / SLOT_MINUTES) * SLOT_PX,
       subjects: [...subjects.entries()].sort((a, b) => b[1].lessons - a[1].lessons),
     };
   }, [week, allSubjects]);
 
-  const isNarrow = typeof window !== "undefined" && window.matchMedia("(max-width:820px)").matches;
+  const calendarRef = useRef(null);
+
+  // Вид зависит от ширины экрана. Раньше её мерили прямо во время рендера —
+  // так делать нельзя: на сервере window нет, значение получалось разным на
+  // сервере и в браузере, а рендер обязан быть чистым. Меряем после монтирования
+  // и переключаем вид силами самого FullCalendar. Слушаем при этом не resize
+  // (прежний обработчик дёргался на каждый пиксель перетаскивания окна), а сам
+  // медиазапрос — он срабатывает один раз, на переходе через границу.
+  useEffect(() => {
+    const mq = window.matchMedia(NARROW);
+    const apply = () => {
+      const api = calendarRef.current?.getApi();
+      const view = mq.matches ? "listWeek" : "timeGridWeek";
+      if (api && api.view.type !== view) api.changeView(view);
+    };
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, [week.id]);
 
   return (
     <>
-      <div className="board">
+      {/* высота известна заранее — резервируем её, чтобы появление календаря
+          не сдвигало легенду и подвал */}
+      <div className="board" style={{ "--board-h": `${model.boardHeight}px` }}>
         <FullCalendar
           /* key: initialDate применяется только при монтировании, поэтому при
              смене недели календарь пересоздаём — иначе он остался бы на прежних датах */
           key={week.id}
+          ref={calendarRef}
           plugins={[timeGridPlugin, listPlugin]}
-          initialView={isNarrow ? "listWeek" : "timeGridWeek"}
+          initialView="timeGridWeek"
           initialDate={week.weekStart}
           firstDay={1}
           hiddenDays={model.hiddenDays}
@@ -143,11 +182,6 @@ export default function Timetable({ week, allSubjects }) {
           eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
           noEventsText="На эту неделю занятий нет"
           events={model.events}
-          windowResize={(arg) =>
-            arg.view.calendar.changeView(
-              window.matchMedia("(max-width:820px)").matches ? "listWeek" : "timeGridWeek"
-            )
-          }
           dayHeaderContent={(arg) => {
             const date = isoOfDate(arg.date);
             const free = !model.busyDates.has(date);

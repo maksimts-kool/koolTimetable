@@ -75,6 +75,12 @@ button:disabled{opacity:.55;cursor:default}
   background:var(--surface);border:1px solid var(--hair);border-radius:14px;
   box-shadow:var(--shadow);overflow:hidden
 }
+/* Место под сетку занято до того, как её построит FullCalendar (высота приходит
+   из Timetable). Только на широком экране: на узком показывается список, и его
+   высота считается иначе. */
+@media (min-width:821px){
+  .board{min-height:var(--board-h,0)}
+}
 .fc{--fc-small-font-size:12px;font-family:inherit}
 .fc .fc-scrollgrid{border-left:0;border-top:0}
 .fc .fc-scrollgrid-section > *{border-right:0}

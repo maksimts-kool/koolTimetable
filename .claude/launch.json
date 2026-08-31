@@ -4,8 +4,23 @@
     {
       "name": "tunniplaan",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 3210
+    },
+    {
+      "name": "tunniplaan-prod",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "start",
+        "--",
+        "-p",
+        "3211"
+      ],
+      "port": 3211
     }
   ]
 }

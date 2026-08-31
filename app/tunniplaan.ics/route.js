@@ -13,7 +13,7 @@
 import { buildCalendar } from "@/lib/ical";
 import { hideSubjects, parseHidden } from "@/lib/optional";
 import { addDays, mondayOf, todayIso } from "@/lib/lessons";
-import { getWeek, listWeeks } from "@/lib/store";
+import { listWeeksFull } from "@/lib/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,17 +26,16 @@ export async function GET(request) {
   const past = Number(searchParams.get("past"));
   const hidden = parseHidden(searchParams.get("hide"));
 
-  let metas = await listWeeks(); // от свежих к старым
-  if (group) metas = metas.filter((w) => String(w.group || "").toLowerCase() === group);
+  // Недели читаем одним запросом: раньше был список, а потом ещё по запросу на
+  // каждую из них — на полной базе это до 61 обращения к хранилищу на одну ленту.
+  let all = await listWeeksFull(); // от свежих к старым
+  if (group) all = all.filter((w) => String(w.group || "").toLowerCase() === group);
   if (Number.isFinite(past) && past >= 0) {
     const earliest = addDays(mondayOf(todayIso()), -7 * past);
-    metas = metas.filter((w) => w.weekStart >= earliest);
+    all = all.filter((w) => w.weekStart >= earliest);
   }
-  metas = metas.slice(0, MAX_WEEKS);
 
-  const weeks = (await Promise.all(metas.map((m) => getWeek(m.id))))
-    .filter(Boolean)
-    .map((w) => hideSubjects(w, hidden));
+  const weeks = all.slice(0, MAX_WEEKS).map((w) => hideSubjects(w, hidden));
 
   const groups = [...new Set(weeks.map((w) => w.group).filter(Boolean))];
   const name = groups.length ? `Tunniplaan ${groups.join(", ")}` : "Tunniplaan";
