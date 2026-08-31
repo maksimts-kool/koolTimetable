@@ -4,12 +4,14 @@
  *   /tunniplaan.ics            — все сохранённые недели
  *   /tunniplaan.ics?group=…    — только одна группа (если в базе их несколько)
  *   /tunniplaan.ics?past=2     — не отдавать недели старше двух прошедших
+ *   /tunniplaan.ics?hide=eesti-b2 — без предметов, на которые студент не ходит
  *
  * Подписка идёт по webcal://, поэтому эндпоинт открыт и отвечает 200 даже
  * когда недель нет: клиент календаря не должен отваливаться из-за пустой базы.
  */
 
 import { buildCalendar } from "@/lib/ical";
+import { hideSubjects, parseHidden } from "@/lib/optional";
 import { addDays, mondayOf, todayIso } from "@/lib/lessons";
 import { getWeek, listWeeks } from "@/lib/store";
 
@@ -22,6 +24,7 @@ export async function GET(request) {
   const { searchParams, origin } = new URL(request.url);
   const group = (searchParams.get("group") || "").trim().toLowerCase();
   const past = Number(searchParams.get("past"));
+  const hidden = parseHidden(searchParams.get("hide"));
 
   let metas = await listWeeks(); // от свежих к старым
   if (group) metas = metas.filter((w) => String(w.group || "").toLowerCase() === group);
@@ -31,11 +34,19 @@ export async function GET(request) {
   }
   metas = metas.slice(0, MAX_WEEKS);
 
-  const weeks = (await Promise.all(metas.map((m) => getWeek(m.id)))).filter(Boolean);
+  const weeks = (await Promise.all(metas.map((m) => getWeek(m.id))))
+    .filter(Boolean)
+    .map((w) => hideSubjects(w, hidden));
 
   const groups = [...new Set(weeks.map((w) => w.group).filter(Boolean))];
   const name = groups.length ? `Tunniplaan ${groups.join(", ")}` : "Tunniplaan";
-  const url = `${origin}/tunniplaan.ics${group ? `?group=${encodeURIComponent(group)}` : ""}`;
+
+  // SOURCE должен вести на эту же ленту: клиент перечитывает её по этому адресу
+  const query = new URLSearchParams();
+  if (group) query.set("group", group);
+  if (hidden.size) query.set("hide", [...hidden].join(","));
+  const search = query.toString();
+  const url = `${origin}/tunniplaan.ics${search ? `?${search}` : ""}`;
 
   const body = buildCalendar(weeks, {
     name,

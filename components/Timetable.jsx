@@ -8,7 +8,13 @@ import { assignColors } from "@/lib/colors";
 import { plural } from "@/lib/format";
 
 const ET_WEEKDAYS = ["Pühapäev", "Esmaspäev", "Teisipäev", "Kolmapäev", "Neljapäev", "Reede", "Laupäev"];
+// Дни недели с понедельника — в таком порядке кружки стоят в карточке предмета.
+const ET_DAY_LETTERS = ["E", "T", "K", "N", "R", "L", "P"];
+const ET_DAY_NAMES = ET_WEEKDAYS.slice(1).concat(ET_WEEKDAYS[0]);
 const LESSON_MINUTES = 45;
+
+/** Воскресенье = 0 у JS, а нам нужен понедельник = 0. */
+const weekdayIndex = (iso) => (new Date(`${iso}T12:00:00`).getDay() + 6) % 7;
 
 const toMinutes = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
 const iso = (dmy) => {
@@ -36,11 +42,16 @@ function lunchGaps(days) {
   return gaps;
 }
 
-export default function Timetable({ week }) {
+/**
+ * @param week неделя к показу
+ * @param allSubjects названия всех предметов недели, включая скрытые: палитра
+ *   считается по ним, иначе галочка «не хожу» перекрашивала бы всю неделю
+ */
+export default function Timetable({ week, allSubjects }) {
   const model = useMemo(() => {
     const events = [];
     const subjects = new Map();
-    const palette = assignColors(week.days.flatMap((d) => d.blocks.map((b) => b.subject)));
+    const palette = assignColors(allSubjects ?? week.days.flatMap((d) => d.blocks.map((b) => b.subject)));
     let earliest = 24 * 60;
     let latest = 0;
     const weekdaysWithLessons = new Set();
@@ -48,14 +59,17 @@ export default function Timetable({ week }) {
     for (const day of week.days) {
       const date = iso(day.date);
       weekdaysWithLessons.add(new Date(`${date}T12:00:00`).getDay());
+      const weekday = weekdayIndex(date);
 
       for (const block of day.blocks) {
         const color = palette.get(block.subject);
         earliest = Math.min(earliest, toMinutes(block.from));
         latest = Math.max(latest, toMinutes(block.to));
 
-        const stat = subjects.get(block.subject) ?? { lessons: 0, teacher: block.teacher, color };
+        const stat =
+          subjects.get(block.subject) ?? { lessons: 0, teacher: block.teacher, color, days: new Set() };
         stat.lessons += block.lessons;
+        stat.days.add(weekday);
         subjects.set(block.subject, stat);
 
         events.push({
@@ -80,6 +94,13 @@ export default function Timetable({ week }) {
       });
     }
 
+    if (latest === 0) {
+      // неделя без уроков (например, скрыт единственный предмет) — сетка всё
+      // равно должна быть валидной: слот «до» не может быть раньше слота «от»
+      earliest = 8 * 60;
+      latest = 16 * 60;
+    }
+
     const busyDates = new Set(week.days.map((d) => iso(d.date)));
     const hiddenDays = [0, 6].filter((d) => !weekdaysWithLessons.has(d));
     const lessons = [...subjects.values()].reduce((sum, s) => sum + s.lessons, 0);
@@ -93,7 +114,7 @@ export default function Timetable({ week }) {
       maxTime: `${hhmm(Math.min(latest + 15, 23 * 60 + 45))}:00`,
       subjects: [...subjects.entries()].sort((a, b) => b[1].lessons - a[1].lessons),
     };
-  }, [week]);
+  }, [week, allSubjects]);
 
   const isNarrow = typeof window !== "undefined" && window.matchMedia("(max-width:820px)").matches;
 
@@ -195,9 +216,20 @@ export default function Timetable({ week }) {
                   <div className="name">{name}</div>
                   <div className="who">{stat.teacher}</div>
                 </div>
-                <div className="hrs">
-                  {stat.lessons} × 45′ · {h ? `${h} ч` : ""}
-                  {m ? `${h ? " " : ""}${m} мин` : ""}
+                <div className="side">
+                  <div className="hrs">
+                    {stat.lessons} × 45′ · {h ? `${h} ч` : ""}
+                    {m ? `${h ? " " : ""}${m} мин` : ""}
+                  </div>
+                  <div className="days">
+                    {[...stat.days]
+                      .sort((a, b) => a - b)
+                      .map((d) => (
+                        <span key={d} className="day" title={ET_DAY_NAMES[d]}>
+                          {ET_DAY_LETTERS[d]}
+                        </span>
+                      ))}
+                  </div>
                 </div>
               </div>
             );

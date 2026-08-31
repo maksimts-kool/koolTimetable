@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { plural, shortDate } from "@/lib/format";
+import { shortDate } from "@/lib/format";
 
 export default function WeekPicker({ weeks, current }) {
   const router = useRouter();
@@ -19,7 +19,7 @@ export default function WeekPicker({ weeks, current }) {
       >
         {weeks.map((w) => (
           <option key={w.id} value={w.id}>
-            {shortDate(w.weekStart)} – {shortDate(w.weekEnd)} · {w.group} · {plural(w.lessonCount)}
+            {shortDate(w.weekStart)} – {shortDate(w.weekEnd)}
           </option>
         ))}
       </select>

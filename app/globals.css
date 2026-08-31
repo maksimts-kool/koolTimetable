@@ -59,6 +59,17 @@ button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 button.danger{background:transparent;border-color:transparent;color:var(--danger);padding:4px 8px}
 button:disabled{opacity:.55;cursor:default}
 
+/* предметы, на которые ходит не вся группа */
+.optouts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 14px}
+.optlabel{font-size:11px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.optout{
+  display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-size:12.5px;
+  background:var(--surface);border:1px solid var(--hair);border-radius:20px;padding:5px 12px 5px 9px
+}
+.optout input{width:14px;height:14px;margin:0;accent-color:var(--accent);cursor:pointer}
+.optout.off{background:var(--surface-2);color:var(--ink-3)}
+.optout.off span{text-decoration:line-through}
+
 /* ---------- календарь ---------- */
 .board{
   background:var(--surface);border:1px solid var(--hair);border-radius:14px;
@@ -125,7 +136,14 @@ button:disabled{opacity:.55;cursor:default}
 .swatch{width:9px;align-self:stretch;min-height:34px;border-radius:4px;flex:none}
 .sub .name{font-weight:600;font-size:14px;line-height:1.2;letter-spacing:-.012em}
 .sub .who{font-size:12.5px;color:var(--ink-2);margin-top:2px}
-.sub .hrs{margin-left:auto;font-size:11.5px;font-weight:500;color:var(--ink-3);white-space:nowrap;padding-top:2px}
+.sub .side{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:7px;padding-top:2px}
+.sub .hrs{font-size:11.5px;font-weight:500;color:var(--ink-3);white-space:nowrap}
+.sub .days{display:flex;gap:4px}
+.sub .day{
+  width:19px;height:19px;border-radius:50%;display:grid;place-items:center;
+  font-size:10.5px;font-weight:600;line-height:1;
+  background:var(--surface-2);border:1px solid var(--hair);color:var(--ink-2)
+}
 
 footer{
   margin-top:26px;padding-top:14px;border-top:1px solid var(--hair);
@@ -187,7 +205,7 @@ table.weeks td.num{font-weight:500}
   body{background:#fff}
   .wrap{max-width:none;padding:0}
   .board{box-shadow:none}
-  .weekpick,footer,.adminbar{display:none}
+  .weekpick,footer,.adminbar,.optouts{display:none}
   @page{size:A4 landscape;margin:12mm}
 }
 :focus-visible{outline:2px solid #3370b6;outline-offset:2px}
