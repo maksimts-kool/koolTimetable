@@ -10,6 +10,10 @@
   --danger:#c0334d;
   --ok:#1f7e48;
   --shadow:0 1px 2px rgba(20,26,34,.06), 0 8px 24px -16px rgba(20,26,34,.28);
+  /* заглушки на время загрузки */
+  --skel-a:#e4e9ef;
+  --skel-b:#f2f5f8;
+  --skel-bar:#d3dae2;
 
   --fc-page-bg-color:#ffffff;
   --fc-border-color:#dde3ea;
@@ -164,6 +168,58 @@ button:disabled{opacity:.55;cursor:default}
   width:21px;height:21px;border-radius:50%;display:grid;place-items:center;
   font-size:11.5px;font-weight:600;line-height:1;
   background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);color:#fff
+}
+
+/* ---------- заглушки на время загрузки ---------- */
+/* Мерцающая плашка: один градиент, который едет поперёк себя. */
+.skel{
+  display:block;
+  background:linear-gradient(90deg,var(--skel-a) 0%,var(--skel-b) 45%,var(--skel-a) 90%);
+  background-size:220% 100%;background-position:220% 0;
+  border-radius:5px;animation:skel-slide 1.35s linear infinite
+}
+@keyframes skel-slide{to{background-position:-220% 0}}
+.skel-line{height:11px}
+.skel-line.sm{height:9px;opacity:.75}
+.skel-select{width:230px;height:33px;border-radius:8px}
+.skel-dot{width:21px;height:21px;border-radius:50%}
+
+.skel-cal{position:relative}
+.skel-grid{display:flex;height:var(--skel-board-h,885px)}
+/* Колонка часов слева — как ось времени у календаря. */
+.skel-axis{position:relative;width:56px;flex:none;margin-top:60px}
+.skel-hour{
+  position:absolute;right:8px;font-size:12px;font-weight:500;letter-spacing:.03em;
+  color:var(--ink-3);opacity:.5;transform:translateY(-6px)
+}
+.skel-col{flex:1;min-width:0;border-left:1px solid var(--hair)}
+.skel-dayhead{
+  height:60px;background:var(--surface-2);border-bottom:1px solid var(--hair);
+  display:flex;flex-direction:column;justify-content:center;gap:7px;padding:0 9px
+}
+/* Занятия расставлены от типовых 8:00; если неделя короче, лишнее срезается. */
+.skel-day{position:relative;height:calc(100% - 60px);overflow:hidden}
+/* Занятие: та же форма, что у настоящей карточки — полоса слева и заливка. */
+.skel-ev{
+  position:absolute;left:0;right:3px;border-left:4px solid var(--skel-bar);
+  background:linear-gradient(90deg,var(--skel-a) 0%,var(--skel-b) 45%,var(--skel-a) 90%);
+  background-size:220% 100%;background-position:220% 0;
+  animation:skel-slide 1.35s linear infinite
+}
+.skel-list{display:none;padding:6px 0}
+.skel-row{
+  display:flex;align-items:center;gap:16px;padding:13px 14px;border-bottom:1px solid var(--hair)
+}
+.skel-sub{background:var(--skel-a);border-left-color:var(--skel-bar)}
+
+@media (max-width:820px){
+  .skel-grid{display:none}
+  .skel-list{display:block}
+  /* как настоящий select: во всю ширину, отдельной строкой */
+  .skel-select{width:100%}
+}
+@media (prefers-reduced-motion:reduce){
+  .skel,.skel-ev{animation:none;background:var(--skel-a)}
 }
 
 footer{

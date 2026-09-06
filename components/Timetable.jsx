@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
+import { BoardSkeleton } from "@/components/Skeletons";
 import { assignColors } from "@/lib/colors";
 import { plural } from "@/lib/format";
 
@@ -58,14 +59,22 @@ function lunchGaps(days) {
 
 /**
  * @param week неделя к показу
- * @param allSubjects названия всех предметов недели, включая скрытые: палитра
- *   считается по ним, иначе галочка «не хожу» перекрашивала бы всю неделю
+ * @param allSubjects названия предметов по всем неделям сразу. Палитра
+ *   считается по ним, а не по видимой неделе: во-первых, галочка «не хожу»
+ *   иначе перекрашивала бы всю неделю, во-вторых, цвета расставляются по
+ *   набору предметов — а он у каждой недели свой, и один предмет менял бы
+ *   цвет при переходе на соседнюю неделю.
  */
 export default function Timetable({ week, allSubjects }) {
   const model = useMemo(() => {
     const events = [];
     const subjects = new Map();
-    const palette = assignColors(allSubjects ?? week.days.flatMap((d) => d.blocks.map((b) => b.subject)));
+    // предметы недели добавляем и сами: список сверху мог не доехать или
+    // отстать от только что загруженной недели, а без цвета карточка упадёт
+    const palette = assignColors([
+      ...(allSubjects ?? []),
+      ...week.days.flatMap((d) => d.blocks.map((b) => b.subject)),
+    ]);
     let earliest = 24 * 60;
     let latest = 0;
     const weekdaysWithLessons = new Set();
@@ -136,96 +145,109 @@ export default function Timetable({ week, allSubjects }) {
 
   const calendarRef = useRef(null);
 
-  // Вид зависит от ширины экрана. Раньше её мерили прямо во время рендера —
-  // так делать нельзя: на сервере window нет, значение получалось разным на
-  // сервере и в браузере, а рендер обязан быть чистым. Меряем после монтирования
-  // и переключаем вид силами самого FullCalendar. Слушаем при этом не resize
-  // (прежний обработчик дёргался на каждый пиксель перетаскивания окна), а сам
-  // медиазапрос — он срабатывает один раз, на переходе через границу.
+  // Вид зависит от ширины экрана, а её на сервере не измерить: там нет window,
+  // и рендер обязан быть чистым. Поэтому вид — состояние, и до первого замера
+  // он null: в этот момент FullCalendar ещё не нужен, на его месте заглушка.
+  // Она же закрывает паузу до гидрации — календарь рисуется только в браузере,
+  // и раньше доска всё это время стояла пустой.
+  //
+  // Слушаем не resize (прежний обработчик дёргался на каждый пиксель
+  // перетаскивания окна), а сам медиазапрос — он срабатывает один раз, на
+  // переходе через границу.
+  const [view, setView] = useState(null);
+
   useEffect(() => {
     const mq = window.matchMedia(NARROW);
-    const apply = () => {
-      const api = calendarRef.current?.getApi();
-      const view = mq.matches ? "listWeek" : "timeGridWeek";
-      if (api && api.view.type !== view) api.changeView(view);
-    };
+    const apply = () => setView(mq.matches ? "listWeek" : "timeGridWeek");
     apply();
     mq.addEventListener("change", apply);
     return () => mq.removeEventListener("change", apply);
-  }, [week.id]);
+  }, []);
+
+  // Готовому календарю новый initialView уже безразличен — вид у него меняется
+  // только этой командой. Зато при пересоздании (смена недели, повторное
+  // подключение в разработке) initialView оказывается верным сразу.
+  useEffect(() => {
+    const api = calendarRef.current?.getApi();
+    if (view && api && api.view.type !== view) api.changeView(view);
+  }, [view, week.id]);
 
   return (
     <>
       {/* высота известна заранее — резервируем её, чтобы появление календаря
           не сдвигало легенду и подвал */}
       <div className="board" style={{ "--board-h": `${model.boardHeight}px` }}>
-        <FullCalendar
-          /* key: initialDate применяется только при монтировании, поэтому при
+        {view ? (
+          <FullCalendar
+            /* key: initialDate применяется только при монтировании, поэтому при
              смене недели календарь пересоздаём — иначе он остался бы на прежних датах */
-          key={week.id}
-          ref={calendarRef}
-          plugins={[timeGridPlugin, listPlugin]}
-          initialView="timeGridWeek"
-          initialDate={week.weekStart}
-          firstDay={1}
-          hiddenDays={model.hiddenDays}
-          headerToolbar={false}
-          allDaySlot={false}
-          nowIndicator
-          height="auto"
-          expandRows
-          slotMinTime={model.minTime}
-          slotMaxTime={model.maxTime}
-          slotDuration="00:15:00"
-          slotLabelInterval="01:00:00"
-          slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
-          eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
-          noEventsText="На эту неделю занятий нет"
-          events={model.events}
-          dayHeaderContent={(arg) => {
-            const date = isoOfDate(arg.date);
-            const free = !model.busyDates.has(date);
-            const [y, m, d] = date.split("-");
-            return (
-              <div className={`dayhead${free ? " free" : ""}`}>
-                <span className="dn">{ET_WEEKDAYS[arg.date.getDay()]}</span>
-                <span className={free ? "free-tag" : "dd"}>{free ? "Tunde pole" : `${d}.${m}.${y}`}</span>
-              </div>
-            );
-          }}
-          eventContent={(arg) => {
-            const p = arg.event.extendedProps;
-            if (arg.event.display === "background") {
-              return <div className="fc-event-title">{arg.event.title}</div>;
-            }
-            if (arg.view.type === "listWeek") {
+            key={week.id}
+            ref={calendarRef}
+            plugins={[timeGridPlugin, listPlugin]}
+            initialView={view}
+            initialDate={week.weekStart}
+            firstDay={1}
+            hiddenDays={model.hiddenDays}
+            headerToolbar={false}
+            allDaySlot={false}
+            nowIndicator
+            height="auto"
+            expandRows
+            slotMinTime={model.minTime}
+            slotMaxTime={model.maxTime}
+            slotDuration="00:15:00"
+            slotLabelInterval="01:00:00"
+            slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
+            eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
+            noEventsText="На эту неделю занятий нет"
+            events={model.events}
+            dayHeaderContent={(arg) => {
+              const date = isoOfDate(arg.date);
+              const free = !model.busyDates.has(date);
+              const [y, m, d] = date.split("-");
               return (
-                <div>
-                  <div className="lname">{arg.event.title}</div>
-                  <div className="lmeta">
-                    {[p.teacher, p.room, p.lessons > 1 ? plural(p.lessons) : null, p.groups]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </div>
+                <div className={`dayhead${free ? " free" : ""}`}>
+                  <span className="dn">{ET_WEEKDAYS[arg.date.getDay()]}</span>
+                  <span className={free ? "free-tag" : "dd"}>{free ? "Tunde pole" : `${d}.${m}.${y}`}</span>
                 </div>
               );
-            }
-            return (
-              <div className="ev">
-                <div className="name">{arg.event.title}</div>
-                <div className="t">
-                  {p.from} – {p.to}
+            }}
+            eventContent={(arg) => {
+              const p = arg.event.extendedProps;
+              if (arg.event.display === "background") {
+                return <div className="fc-event-title">{arg.event.title}</div>;
+              }
+              if (arg.view.type === "listWeek") {
+                return (
+                  <div>
+                    <div className="lname">{arg.event.title}</div>
+                    <div className="lmeta">
+                      {[p.teacher, p.room, p.lessons > 1 ? plural(p.lessons) : null, p.groups]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </div>
+                  </div>
+                );
+              }
+              return (
+                <div className="ev">
+                  <div className="name">{arg.event.title}</div>
+                  <div className="t">
+                    {p.from} – {p.to}
+                  </div>
+                  {p.groups && p.groups.includes(",") ? <div className="shared">{p.groups}</div> : null}
+                  <div className="meta">
+                    <span>{p.teacher}</span>
+                    <span className="room">{p.room}</span>
+                  </div>
+                  {p.lessons > 1 ? <div className="n">{p.lessons}×</div> : null}
                 </div>
-                {p.groups && p.groups.includes(",") ? <div className="shared">{p.groups}</div> : null}
-                <div className="meta">
-                  <span>{p.teacher}</span>
-                  <span className="room">{p.room}</span>
-                </div>
-                {p.lessons > 1 ? <div className="n">{p.lessons}×</div> : null}
-              </div>
-            );
-          }}
-        />
+              );
+            }}
+          />
+        ) : (
+          <BoardSkeleton height={model.boardHeight} />
+        )}
       </div>
 
       <section className="legend">

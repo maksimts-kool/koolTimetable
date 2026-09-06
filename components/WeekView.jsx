@@ -13,8 +13,11 @@ const STORAGE_KEY = "tunniplaan:hidden";
  * Страница недели целиком на клиенте: галочка «не хожу» меняет и счётчики в
  * шапке, и сетку, и легенду, и адрес ленты календаря — держать это состояние
  * в одном месте проще, чем синхронизировать половину страницы с сервером.
+ *
+ * @param subjects названия предметов по всем неделям сразу — по ним считается
+ *   палитра, поэтому предмет выглядит одинаково в любой неделе
  */
-export default function WeekView({ week, weeks, current }) {
+export default function WeekView({ week, weeks, current, subjects }) {
   const [hidden, setHidden] = useState(() => new Set());
 
   // localStorage читаем после гидрации: на сервере его нет, а разошедшуюся
@@ -28,10 +31,6 @@ export default function WeekView({ week, weeks, current }) {
   }, []);
 
   const optional = useMemo(() => optionalsIn([week]), [week]);
-  const allSubjects = useMemo(
-    () => week.days.flatMap((d) => d.blocks.map((b) => b.subject)),
-    [week]
-  );
   const shown = useMemo(() => hideSubjects(week, hidden), [week, hidden]);
 
   function toggle(id, attends) {
@@ -51,7 +50,7 @@ export default function WeekView({ week, weeks, current }) {
     Math.floor(minutes / 60) + (minutes % 60 ? `:${String(minutes % 60).padStart(2, "0")}` : "");
 
   return (
-    <main className="wrap">
+    <>
       <header className="head">
         <div>
           <p className="eyebrow">Tallinna Tehnoloogiakolledž</p>
@@ -98,7 +97,7 @@ export default function WeekView({ week, weeks, current }) {
         </div>
       ) : null}
 
-      <Timetable week={shown} allSubjects={allSubjects} />
+      <Timetable week={shown} allSubjects={subjects} />
 
       <footer>
         <span>Источник: {week.fileName}</span>
@@ -109,6 +108,6 @@ export default function WeekView({ week, weeks, current }) {
         <IcalLink hide={[...hidden].join(",")} />
         <Link href="/admin">Админка</Link>
       </footer>
-    </main>
+    </>
   );
 }
