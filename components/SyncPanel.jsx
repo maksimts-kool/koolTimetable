@@ -17,6 +17,8 @@ const STATUS = {
   empty: "занятий нет",
 };
 
+const SOURCE = { tahvel: "Tahvel", edupage: "EduPage" };
+
 export default function SyncPanel({ group, onSynced }) {
   const [weeks, setWeeks] = useState(3);
   const [busy, setBusy] = useState(false);
@@ -26,7 +28,7 @@ export default function SyncPanel({ group, onSynced }) {
     setBusy(true);
     setResult(null);
     try {
-      const res = await fetch("/api/tahvel/sync", {
+      const res = await fetch("/api/sync", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ weeks }),
@@ -49,11 +51,12 @@ export default function SyncPanel({ group, onSynced }) {
 
   return (
     <div className="card">
-      <h2>Обновить из Tahvel</h2>
+      <h2>Обновить расписание</h2>
       <p className="hint">
-        Расписание группы <span className="pill">{group}</span> берётся прямо из Tahvel — выгружать
-        PDF не нужно. Недели без занятий пропускаются, уже загруженные не трогаются, если в них
-        ничего не изменилось. Раз в сутки то же самое происходит само.
+        Расписание группы <span className="pill">{group}</span> берётся прямо из Tahvel, а если он
+        неделю не показывает — из EduPage школы. Выгружать PDF не нужно. Недели без занятий
+        пропускаются, уже загруженные не трогаются, если в них ничего не изменилось. Раз в сутки то
+        же самое происходит само.
       </p>
 
       <div className="form-row">
@@ -87,6 +90,10 @@ export default function SyncPanel({ group, onSynced }) {
               <li key={r.id}>
                 {ruDate(r.weekStart)} – {ruDate(r.weekEnd)} — {STATUS[r.status] ?? r.status}
                 {r.lessonCount ? `, ${plural(r.lessonCount)}` : ""}
+                {r.source ? ` (${SOURCE[r.source] ?? r.source})` : ""}
+                {r.problems?.length ? (
+                  <div style={{ color: "var(--ink-2)" }}>{r.problems.join("; ")}</div>
+                ) : null}
               </li>
             ))}
           </ul>

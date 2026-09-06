@@ -21,7 +21,7 @@ export default async function AdminPage() {
           <p className="eyebrow">Tunniplaan · управление</p>
           <h1>
             Админка
-            <span className="grp">Синхронизация с Tahvel, загрузка PDF и список недель</span>
+            <span className="grp">Синхронизация с Tahvel и EduPage, загрузка PDF и список недель</span>
           </h1>
         </div>
         <div className="right">

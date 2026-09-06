@@ -27,7 +27,7 @@ export default async function Page({ searchParams }) {
         </header>
         <div className="empty-state">
           <b>Пока ни одной недели</b>
-          Синхронизируйте расписание с Tahvel в <Link href="/admin">админке</Link> — или загрузите
+          Синхронизируйте расписание в <Link href="/admin">админке</Link> — или загрузите
           PDF-выгрузку.
         </div>
       </main>

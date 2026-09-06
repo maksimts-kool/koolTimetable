@@ -81,8 +81,8 @@ export default function AdminPanel({ weeks, driver, group }) {
       <div className="card">
         <h2>Загрузка PDF</h2>
         <p className="hint">
-          Запасной путь: PDF-выгрузка «Tunniplaan» из ТТК — на случай, если в Tahvel группы нет или
-          её расписание закрыто. Неделя и группа читаются из самого документа.
+          Последний запасной путь: PDF-выгрузка «Tunniplaan» из ТТК — на случай, если группы нет
+          ни в Tahvel, ни в EduPage. Неделя и группа читаются из самого документа.
         </p>
 
         <div
