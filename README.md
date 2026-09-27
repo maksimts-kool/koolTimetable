@@ -171,6 +171,25 @@ Tahvel. В EduPage группа ищется по тому же коду, отд
 `BLOB_READ_WRITE_TOKEN` подставится сама. Драйвер переключится на Blob автоматически, менять
 код не нужно.
 
+## Хостинг на Zone
+
+Основная копия живёт на Zone: https://tunniplaan.maksimtsikvasvili24.thkit.ee. Приложение
+запускает PM2 из панели, поддомен проксирует запросы на его порт (`mod_proxy`).
+
+| Что | Где |
+|---|---|
+| Код | `~/tunniplaan-app` — клон репозитория вне папок сайта, чтобы `.env.local` не отдавался наружу |
+| Настройки | `~/tunniplaan-app/.env.local` — те же переменные, что в `.env.example` |
+| Процесс | [`zone/pm2.json`](zone/pm2.json): `next start` на loopback-адресе сервера `127.2.76.187:3210` |
+| Поддомен | Webserver → Subdomains → `tunniplaan` → mod_proxy backend port `3210` |
+| Крон | Crontab в панели раз в сутки запускает [`zone/cron.sh`](zone/cron.sh) |
+
+Выкладка новой версии — после пуша в `main`:
+
+```bash
+sh zone/deploy.sh
+```
+
 ## Скрипты
 
 ```bash

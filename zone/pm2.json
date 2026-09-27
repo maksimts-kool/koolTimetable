@@ -1,0 +1,15 @@
+{
+  "apps": [
+    {
+      "name": "tunniplaan",
+      "cwd": "/data01/virt140715/tunniplaan-app",
+      "script": "node_modules/next/dist/bin/next",
+      "args": "start -H 127.2.76.187 -p 3210",
+      "env": {
+        "NODE_ENV": "production",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "max_memory_restart": "450M"
+    }
+  ]
+}
