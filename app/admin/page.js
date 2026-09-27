@@ -34,7 +34,7 @@ export default async function AdminPage() {
           <h2>Пароль не задан</h2>
           <p className="hint" style={{ margin: 0 }}>
             Добавьте переменную окружения <code>ADMIN_PASSWORD</code> (локально — в файл{" "}
-            <code>.env.local</code>, на Vercel — в Project Settings → Environment Variables) и
+            <code>.env.local</code>, на Zone — в <code>~/tunniplaan-app/.env.local</code>) и
             перезапустите приложение.
           </p>
         </div>
