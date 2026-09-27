@@ -289,20 +289,29 @@ body:has(.embed){background:transparent}
 .cday-title{flex:1;text-align:center;display:flex;flex-direction:column;gap:1px}
 .cday-title b{font-size:15.5px;font-weight:600;letter-spacing:-.01em}
 .cday-title span{font-size:12px;color:#777}
-.cday-arrow{
-  width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex:none;
-  font-size:19px;line-height:1;text-decoration:none;color:#222;background:#f3f3f3;
+.cday-title button{
+  font:inherit;font-size:15.5px;font-weight:600;letter-spacing:-.01em;color:inherit;
+  background:none;border:0;padding:0;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px
 }
-.cday-arrow:hover{background:#e7e7e7}
-.cday-arrow.off{opacity:.3}
+.cday-arrow{
+  width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex:none;padding:0;
+  font:inherit;font-size:19px;line-height:1;color:#222;background:#f3f3f3;border:0;cursor:pointer;
+}
+.cday-arrow:hover:not(:disabled){background:#e7e7e7}
+.cday-arrow:disabled{opacity:.3;cursor:default}
 .cday-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
-.cday-list li{border-left:3px solid var(--c);padding:1px 0 1px 10px;display:flex;flex-direction:column}
+.cday-list li{
+  position:relative;border-left:3px solid var(--c);padding:1px 0 1px 10px;display:flex;flex-direction:column;
+  transition:opacity .4s,background-color .4s
+}
 .cday-list .t{font-size:12px;color:#777;font-variant-numeric:tabular-nums}
+.cday-list .t em{font-style:normal;font-weight:600;color:var(--c)}
 .cday-list .s{font-weight:600;font-size:14px;overflow-wrap:anywhere}
 .cday-list .r{font-size:12px;color:#777}
 .cday-list li.done{opacity:.45}
-.cday-list li.now{background:color-mix(in srgb, var(--c) 9%, transparent);border-radius:0 6px 6px 0}
-.cday-list li.now .t::after{content:" · praegu";color:var(--c);font-weight:600}
+.cday-list li.now{background:color-mix(in srgb, var(--c) 10%, transparent);border-radius:0 6px 6px 0;padding:5px 8px 8px 10px}
+.cday-list .bar{position:absolute;left:0;right:0;bottom:0;height:3px;border-radius:0 0 6px 0;background:color-mix(in srgb, var(--c) 18%, transparent);overflow:hidden}
+.cday-list .bar::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--p);background:var(--c);transition:width .6s}
 .cday-more{display:inline-block;margin-top:14px;font-size:13px;font-weight:500;color:#222;text-decoration:none;border-bottom:1px solid #ccc}
 .cday-more:hover{border-color:#222}
 .cday-empty{margin:0;font-size:13.5px;color:#777}
