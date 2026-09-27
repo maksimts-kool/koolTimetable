@@ -23,10 +23,20 @@ export default function EmbedResize() {
       window.parent.postMessage({ type: "tunniplaan:height", height }, "*");
     };
 
-    const observer = new ResizeObserver(post);
-    observer.observe(document.body);
+    // ResizeObserver живёт в цикле отрисовки, а его браузер придерживает для
+    // фрейма вне экрана: неделя, пришедшая потоком на смену заглушке, иногда
+    // так и оставалась обрезанной по высоте заглушки. Смену разметки и
+    // загрузку шрифта ловим отдельно — эти события не ждут отрисовки.
+    const resized = new ResizeObserver(post);
+    const mutated = new MutationObserver(post);
+    resized.observe(document.body);
+    mutated.observe(document.body, { childList: true, subtree: true });
+    document.fonts?.ready.then(post);
     post();
-    return () => observer.disconnect();
+    return () => {
+      resized.disconnect();
+      mutated.disconnect();
+    };
   }, []);
 
   return null;
