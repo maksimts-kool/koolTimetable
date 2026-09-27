@@ -20,8 +20,23 @@ export const dynamic = "force-dynamic";
 
 const MAX_WEEKS = 60; // потолок на случай, если база разрослась
 
+/**
+ * Внешний адрес сайта. За прокси хостинга (mod_proxy на Zone) request.url
+ * указывает на внутренний адрес приложения — вышло бы https://localhost:3210,
+ * и календарь, перечитывающий ленту по SOURCE, стучался бы в никуда. Прокси
+ * передаёт настоящий хост в X-Forwarded-Host.
+ */
+function publicOrigin(request) {
+  const url = new URL(request.url);
+  const host = request.headers.get("x-forwarded-host")?.split(",")[0].trim();
+  if (!host) return url.origin;
+  const proto = request.headers.get("x-forwarded-proto")?.split(",")[0].trim() || "https";
+  return `${proto}://${host}`;
+}
+
 export async function GET(request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  const origin = publicOrigin(request);
   const group = (searchParams.get("group") || "").trim().toLowerCase();
   const past = Number(searchParams.get("past"));
   const hidden = parseHidden(searchParams.get("hide"));
