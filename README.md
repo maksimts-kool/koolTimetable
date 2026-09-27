@@ -135,7 +135,7 @@ npm run dev
 | Настройки | `~/tunniplaan-app/.env.local` — переменные из таблицы ниже |
 | Процесс | [`zone/pm2.json`](zone/pm2.json): `next start` на loopback-адресе сервера `127.2.76.187:3210` |
 | Поддомен | Webserver → Subdomains → `tunniplaan` → mod_proxy backend port `3210` |
-| База | MySQL/MariaDB → своя база и пользователь с доступом `WS`; таблица `weeks` создаётся сама при первом запросе |
+| База | MySQL/MariaDB → `d141144_homedb`, пользователь `d141144_maksimts` (доступ `WS`); таблица `tunniplaan_weeks` создаётся сама при первом запросе |
 | Крон | Crontab в панели раз в сутки запускает [`zone/cron.sh`](zone/cron.sh) |
 
 | Переменная | Значение |
