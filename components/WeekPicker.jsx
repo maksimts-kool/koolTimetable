@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { shortDate } from "@/lib/format";
 
-export default function WeekPicker({ weeks, current }) {
+/** @param path страница, на которой открывается выбранная неделя */
+export default function WeekPicker({ weeks, current, path = "/" }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -14,7 +15,7 @@ export default function WeekPicker({ weeks, current }) {
       <select
         value={current}
         disabled={pending}
-        onChange={(e) => startTransition(() => router.push(`/?w=${encodeURIComponent(e.target.value)}`))}
+        onChange={(e) => startTransition(() => router.push(`${path}?w=${encodeURIComponent(e.target.value)}`))}
         aria-label="Выбор недели"
       >
         {weeks.map((w) => (

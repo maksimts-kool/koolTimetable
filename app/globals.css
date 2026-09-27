@@ -278,6 +278,11 @@ table.weeks td.num{font-weight:500}
   select{min-width:0;width:100%}
   .weekpick{width:100%;flex-wrap:wrap}
 }
+/* ---------- встраивание (/embed) ---------- */
+/* фон и поля даёт сайт-родитель; немного отступа оставляем под тень сетки */
+body:has(.embed){background:transparent}
+.wrap.embed{max-width:none;padding:6px 2px 10px}
+
 @media print{
   body{background:#fff}
   .wrap{max-width:none;padding:0}

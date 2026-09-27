@@ -16,8 +16,10 @@ const STORAGE_KEY = "tunniplaan:hidden";
  *
  * @param subjects названия предметов по всем неделям сразу — по ним считается
  *   палитра, поэтому предмет выглядит одинаково в любой неделе
+ * @param embed страница во фрейме на чужом сайте: без ссылки на админку, а
+ *   выбор недели остаётся на /embed
  */
-export default function WeekView({ week, weeks, current, subjects }) {
+export default function WeekView({ week, weeks, current, subjects, embed = false }) {
   const [hidden, setHidden] = useState(() => new Set());
 
   // localStorage читаем после гидрации: на сервере его нет, а разошедшуюся
@@ -63,7 +65,7 @@ export default function WeekView({ week, weeks, current, subjects }) {
           </h1>
         </div>
         <div className="right">
-          <WeekPicker weeks={weeks} current={current} />
+          <WeekPicker weeks={weeks} current={current} path={embed ? "/embed" : "/"} />
           <div className="stats">
             <div className="stat">
               <b>{shown.lessonCount}</b>
@@ -106,7 +108,7 @@ export default function WeekView({ week, weeks, current, subjects }) {
           {new Date(week.uploadedAt).toLocaleDateString("ru-RU")}
         </span>
         <IcalLink hide={[...hidden].join(",")} />
-        <Link href="/admin">Админка</Link>
+        {embed ? null : <Link href="/admin">Админка</Link>}
       </footer>
     </>
   );
