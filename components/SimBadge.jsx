@@ -5,12 +5,8 @@ import { clientDate, onSimChange, readSim, writeSim } from "@/lib/sim";
 
 const fmt = new Intl.DateTimeFormat("ru-RU", {
   timeZone: "Europe/Tallinn",
-  weekday: "short",
-  day: "2-digit",
-  month: "2-digit",
   hour: "2-digit",
   minute: "2-digit",
-  second: "2-digit",
 });
 
 /**
@@ -39,8 +35,7 @@ export default function SimBadge() {
     <div className="sim-badge" role="status">
       <span className="sim-dot" aria-hidden="true" />
       <span>
-        Симуляция · <b>{fmt.format(clientDate())}</b>
-        {sim.speed > 1 ? ` · ×${sim.speed}` : ""}
+        Симуляция: <b>{fmt.format(clientDate())}</b>
       </span>
       <button type="button" onClick={() => writeSim(null)}>
         Выключить

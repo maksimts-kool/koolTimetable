@@ -93,10 +93,7 @@ export default function TodayStrip({ week, allSubjects, initialNow }) {
         <span className="today-check" aria-hidden="true">
           ✓
         </span>
-        <div>
-          <b>Учебная неделя позади</b>
-          <span>Следующие занятия — в расписании следующей недели.</span>
-        </div>
+        <b>На этой неделе уроков больше нет</b>
       </section>
     );
   }
@@ -127,29 +124,17 @@ export default function TodayStrip({ week, allSubjects, initialNow }) {
       )
     : 0;
 
-  const [, m, d] = day.iso.split("-");
-
+  // Подпись — одна короткая фраза: подробности (кабинет, время) видны на треке
   let headline;
   let count = null;
-  // у следующего дня — только время первого урока: остальное видно на треке
-  let sub = null;
   if (current >= 0) {
     const b = blocks[current];
-    headline = short(b.subject);
+    headline = `Сейчас ${short(b.subject)}`;
     count = `ещё ${countdown(toMinutes(b.to) - now.minutes)}`;
-    const after = blocks[current + 1];
-    sub = [
-      b.room,
-      b.teacher,
-      after ? `дальше ${short(after.subject)} в ${after.from}` : "последний урок на сегодня",
-    ];
   } else if (live) {
     const b = blocks[next];
-    const gap = toMinutes(b.from) - now.minutes;
-    const lunch = next > 0 && toMinutes(b.from) - toMinutes(blocks[next - 1].to) >= 30;
-    headline = next === 0 ? "До начала занятий" : lunch ? "Обед" : "Перемена";
-    count = `через ${countdown(gap)}`;
-    sub = [`${short(b.subject)} в ${b.from}`, b.room, b.teacher];
+    headline = `${next === 0 ? "Первый" : "Следующий"} урок в ${b.from}`;
+    count = `через ${countdown(toMinutes(b.from) - now.minutes)}`;
   } else {
     const b = blocks[0];
     // следующий учебный день не всегда завтрашний: между ними бывает свободный
@@ -176,18 +161,12 @@ export default function TodayStrip({ week, allSubjects, initialNow }) {
     <section className={`today rise${live ? " is-live" : ""}`} style={{ "--i": 1 }} aria-live="off">
       <div className="today-top">
         <div className="today-status">
-          {live ? (
-            <p className="today-when">
-              <span className="live-dot" aria-hidden="true" />
-              Сегодня · {day.weekday}, {d}.{m}
-            </p>
-          ) : null}
           <div className="today-headline">
+            {live ? <span className="live-dot" aria-hidden="true" /> : null}
             {/* key: смена урока — новая строка, и она въезжает заново */}
             <b key={headline}>{headline}</b>
             {count ? <span className="today-count">{count}</span> : null}
           </div>
-          {sub ? <p className="today-sub">{sub.filter(Boolean).join(" · ")}</p> : null}
         </div>
 
         <div className="today-meter">

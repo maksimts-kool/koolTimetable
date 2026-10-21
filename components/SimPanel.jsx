@@ -58,11 +58,7 @@ export default function SimPanel() {
   return (
     <div className="card">
       <h2>Симуляция времени</h2>
-      <p className="hint">
-        Подставляет выбранное время в полосу «сегодня», линию «сейчас» и подсветку уроков — чтобы
-        проверить, как расписание выглядит утром, на перемене или после уроков. Действует только в
-        этом браузере: сервер и остальные посетители видят настоящее время.
-      </p>
+      <p className="hint">Расписание покажет выбранное время. Только в этом браузере.</p>
 
       <div className="form-row">
         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Дата" />
@@ -75,7 +71,7 @@ export default function SimPanel() {
         >
           {SPEEDS.map((s) => (
             <option key={s} value={s}>
-              {s === 1 ? "обычная скорость" : `×${s}`}
+              {s === 1 ? "×1" : `×${s}`}
             </option>
           ))}
         </select>
@@ -95,8 +91,7 @@ export default function SimPanel() {
 
       {sim && now ? (
         <div className="msg warn" role="status">
-          Идёт симуляция: <b>{now.day.split("-").reverse().join(".")}</b>, <b>{hhmm(now.minutes)}</b>
-          {sim.speed > 1 ? ` · ×${sim.speed}` : ""}.{" "}
+          Симуляция: <b>{hhmm(now.minutes)}</b>{" "}
           <a href="/" target="_blank" rel="noopener">
             Открыть расписание ↗
           </a>
