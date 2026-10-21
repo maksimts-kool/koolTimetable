@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { autoIndex, dayLabel, duration, tallinnNow } from "@/lib/day";
 import { toMinutes } from "@/lib/lessons";
+import { clientDate } from "@/lib/sim";
 
 const TICK_MS = 15_000;
 // страницу могут держать открытой сутками — расписание подтягиваем заново,
@@ -29,7 +30,7 @@ export default function CompactDay({ days, wanted, initialNow }) {
   );
 
   useEffect(() => {
-    const tick = () => setNow(tallinnNow());
+    const tick = () => setNow(tallinnNow(clientDate()));
     tick();
     const timer = setInterval(tick, TICK_MS);
     const refresh = setInterval(() => router.refresh(), REFRESH_MS);

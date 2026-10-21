@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import IcalLink from "@/components/IcalLink";
+import SimBadge from "@/components/SimBadge";
 import Timetable from "@/components/Timetable";
 import TodayStrip from "@/components/TodayStrip";
 import WeekPicker from "@/components/WeekPicker";
@@ -122,6 +123,8 @@ export default function WeekView({ week, weeks, current, subjects, initialNow, e
         <IcalLink hide={[...hidden].join(",")} />
         {embed ? null : <Link href="/admin">Админка</Link>}
       </footer>
+
+      <SimBadge />
     </>
   );
 }

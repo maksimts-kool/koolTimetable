@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import SimPanel from "@/components/SimPanel";
 import SyncPanel from "@/components/SyncPanel";
 import { plural, ruDate } from "@/lib/format";
 
@@ -197,6 +198,8 @@ export default function AdminPanel({ weeks, driver, group }) {
           </table>
         )}
       </div>
+
+      <SimPanel />
     </>
   );
 }

@@ -7,6 +7,7 @@ import listPlugin from "@fullcalendar/list";
 import { BoardSkeleton } from "@/components/Skeletons";
 import useNow from "@/components/useNow";
 import { assignColors } from "@/lib/colors";
+import { clientDate } from "@/lib/sim";
 import { plural } from "@/lib/format";
 
 const ET_WEEKDAYS = ["Pühapäev", "Esmaspäev", "Teisipäev", "Kolmapäev", "Neljapäev", "Reede", "Laupäev"];
@@ -155,6 +156,16 @@ export default function Timetable({ week, allSubjects }) {
   const nowDay = clock?.day;
   const nowMinute = clock ? Math.floor(clock.minutes) : null;
 
+  // Линию «сейчас» календарь двигает по своему таймеру, который заведён на
+  // настоящие часы: ускоренную или только что выключенную симуляцию он
+  // заметил бы с опозданием до минуты. Перечитывает «сейчас» он ещё и при
+  // возвращении во вкладку — этим и пользуемся на каждой новой минуте.
+  // Наш собственный обработчик того же события минуту не меняет, так что
+  // по кругу это не идёт.
+  useEffect(() => {
+    if (nowMinute != null) document.dispatchEvent(new Event("visibilitychange"));
+  }, [nowDay, nowMinute]);
+
   // предмет под курсором в легенде — его занятия в сетке выделяются
   const [hovered, setHovered] = useState(null);
 
@@ -252,6 +263,8 @@ export default function Timetable({ week, allSubjects }) {
             headerToolbar={false}
             allDaySlot={false}
             nowIndicator
+            /* с учётом симуляции времени из админки */
+            now={clientDate}
             height="auto"
             expandRows
             slotMinTime={model.minTime}

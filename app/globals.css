@@ -68,7 +68,7 @@ h1 .grp{display:block;font-size:.42em;font-weight:400;letter-spacing:-.005em;col
 .to-today:hover:not(:disabled){border-color:var(--live)}
 /* пока грузится другая неделя, нынешняя приглушена — видно, что клик принят */
 .wrap:has(.weekpick[aria-busy=true]) :is(.board,.today,.legend){opacity:.55;filter:saturate(.7);transition:opacity .25s,filter .25s}
-select,input[type=password],input[type=file]{
+select,input[type=password],input[type=file],input[type=date],input[type=time]{
   font:inherit;font-size:13.5px;color:var(--ink);background:var(--surface);
   border:1px solid var(--hair);border-radius:8px;padding:7px 11px
 }
@@ -432,6 +432,25 @@ button:disabled{opacity:.55;cursor:default}
 @keyframes pop{from{transform:scale(.3);opacity:0}}
 .skel-today .tb{border:0;animation:skel-slide 1.35s linear infinite;border-radius:0}
 
+/* симуляция времени (админка) */
+.sim-presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.sim-presets button{padding:5px 11px;border-radius:20px;font-size:12.5px;color:var(--ink-2)}
+.sim-presets b{font-weight:600;color:var(--ink)}
+.sim-badge{
+  position:fixed;right:16px;bottom:16px;z-index:50;display:flex;align-items:center;gap:10px;
+  padding:7px 8px 7px 13px;border-radius:24px;font-size:12.5px;color:#fff;
+  background:rgba(20,26,34,.92);box-shadow:0 10px 30px -10px rgba(20,26,34,.6);
+  animation:rise .4s var(--ease) backwards
+}
+.sim-badge b{font-weight:600}
+.sim-badge button{
+  padding:4px 10px;border-radius:16px;font-size:12px;color:#fff;
+  background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2)
+}
+.sim-badge button:hover:not(:disabled){background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.35)}
+.sim-dot{width:8px;height:8px;border-radius:50%;background:#f5b14a;flex:none;animation:pulse-soft 1.4s ease-in-out infinite}
+@keyframes pulse-soft{50%{opacity:.35}}
+
 /* полоска загрузки вверху окна */
 .navbar{
   position:fixed;top:0;left:0;right:0;height:3px;z-index:100;overflow:hidden;pointer-events:none;
@@ -556,7 +575,7 @@ body:has(.embed){background:transparent}
   body{background:#fff}
   .wrap{max-width:none;padding:0}
   .board{box-shadow:none}
-  .weekpick,footer,.adminbar,.optouts,.today,.navbar{display:none}
+  .weekpick,footer,.adminbar,.optouts,.today,.navbar,.sim-badge{display:none}
   @page{size:A4 landscape;margin:12mm}
 }
 :focus-visible{outline:2px solid #3370b6;outline-offset:2px}
