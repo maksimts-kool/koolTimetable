@@ -1,6 +1,7 @@
 import Link from "next/link";
 import WeekView from "@/components/WeekView";
-import { getWeek, latestWeek, listSubjects, listWeeks } from "@/lib/store";
+import { tallinnClock } from "@/lib/day";
+import { currentWeek, getWeek, listSubjects, listWeeks, pickCurrent } from "@/lib/store";
 
 /**
  * Неделя из хранилища — общая часть главной страницы и её встраиваемой версии
@@ -10,13 +11,15 @@ import { getWeek, latestWeek, listSubjects, listWeeks } from "@/lib/store";
  * @param embed страница открыта во фрейме на чужом сайте
  */
 export default async function WeekPage({ wanted, embed = false }) {
+  // время сервера: с ним совпадает первая отрисовка живых частей страницы
+  const now = tallinnClock();
+
   // Список недель, саму неделю и предметы тянем разом: какая неделя нужна,
-  // видно уже из адреса, а без него нужна самая свежая — она же первая в
-  // списке. Раньше это были запросы подряд, и страница ждала все задержки
-  // последовательно.
+  // видно уже из адреса, а без него — текущая. Раньше это были запросы
+  // подряд, и страница ждала все задержки последовательно.
   const [weeks, preloaded, subjects] = await Promise.all([
     listWeeks(),
-    wanted ? getWeek(wanted) : latestWeek(),
+    wanted ? getWeek(wanted) : currentWeek(now.day),
     listSubjects(),
   ]);
 
@@ -42,11 +45,18 @@ export default async function WeekPage({ wanted, embed = false }) {
     );
   }
 
-  // ?w= с чужим или удалённым id — откатываемся на свежую неделю
-  const selected = weeks.find((w) => w.id === wanted) ?? weeks[0];
+  // ?w= с чужим или удалённым id — откатываемся на текущую неделю
+  const selected = weeks.find((w) => w.id === wanted) ?? pickCurrent(weeks, now.day);
   const week = preloaded?.id === selected.id ? preloaded : await getWeek(selected.id);
 
   return (
-    <WeekView week={week} weeks={weeks} current={selected.id} subjects={subjects} embed={embed} />
+    <WeekView
+      week={week}
+      weeks={weeks}
+      current={selected.id}
+      subjects={subjects}
+      initialNow={now}
+      embed={embed}
+    />
   );
 }

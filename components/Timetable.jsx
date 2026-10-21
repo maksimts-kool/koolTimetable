@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
 import { BoardSkeleton } from "@/components/Skeletons";
+import useNow from "@/components/useNow";
 import { assignColors } from "@/lib/colors";
 import { plural } from "@/lib/format";
 
@@ -27,6 +28,8 @@ const NARROW = "(max-width:820px)";
 const DAY_HEADER_PX = 60;
 const SLOT_PX = 25;
 const SLOT_MINUTES = 15;
+// сколько длится въезд карточек после появления сетки
+const ENTER_MS = 1600;
 
 /** Воскресенье = 0 у JS, а нам нужен понедельник = 0. */
 const weekdayIndex = (iso) => (new Date(`${iso}T12:00:00`).getDay() + 6) % 7;
@@ -102,7 +105,7 @@ export default function Timetable({ week, allSubjects }) {
           backgroundColor: color.bg,
           borderColor: color.border,
           textColor: "#fff",
-          extendedProps: { ...block },
+          extendedProps: { ...block, date },
         });
       }
     }
@@ -145,6 +148,52 @@ export default function Timetable({ week, allSubjects }) {
 
   const calendarRef = useRef(null);
 
+  // Часы для сетки: прошедшие занятия бледнеют, текущее заливается по мере
+  // хода. Каждый тик перерисовывает календарь целиком, поэтому раз в
+  // полминуты, а колбэки ниже зависят от минуты, а не от секунды.
+  const clock = useNow(null, 30_000);
+  const nowDay = clock?.day;
+  const nowMinute = clock ? Math.floor(clock.minutes) : null;
+
+  // предмет под курсором в легенде — его занятия в сетке выделяются
+  const [hovered, setHovered] = useState(null);
+
+  /** Где занятие относительно текущей минуты: прошло, идёт или впереди. */
+  const phase = useCallback(
+    (p) => {
+      if (!p?.date || nowDay == null) return null;
+      if (p.date !== nowDay) return p.date < nowDay ? "past" : null;
+      if (toMinutes(p.to) <= nowMinute) return "past";
+      return toMinutes(p.from) <= nowMinute ? "live" : null;
+    },
+    [nowDay, nowMinute]
+  );
+
+  const eventClassNames = useCallback(
+    (arg) => {
+      const p = arg.event.extendedProps;
+      const classes = [];
+      const at = phase(p);
+      if (at) classes.push(`is-${at}`);
+      if (hovered && p.subject && p.subject !== hovered) classes.push("is-dim");
+      return classes;
+    },
+    [phase, hovered]
+  );
+
+  // Карточки въезжают по очереди — слева направо и сверху вниз, — пока сетка
+  // только появилась. Задержка пишется в сам элемент; класс .enter снимается
+  // через ENTER_MS, и анимация больше не повторяется на перерисовках.
+  const eventDidMount = useCallback(
+    (arg) => {
+      const p = arg.event.extendedProps;
+      if (!p?.date) return;
+      const delay = weekdayIndex(p.date) * 70 + (toMinutes(p.from) - toMinutes(model.minTime)) * 0.5;
+      arg.el.style.setProperty("--d", `${Math.round(delay)}ms`);
+    },
+    [model.minTime]
+  );
+
   // Вид зависит от ширины экрана, а её на сервере не измерить: там нет window,
   // и рендер обязан быть чистым. Поэтому вид — состояние, и до первого замера
   // он null: в этот момент FullCalendar ещё не нужен, на его месте заглушка.
@@ -172,11 +221,23 @@ export default function Timetable({ week, allSubjects }) {
     if (view && api && api.view.type !== view) api.changeView(view);
   }, [view, week.id]);
 
+  const [entering, setEntering] = useState(true);
+  const ready = view !== null;
+  useEffect(() => {
+    if (!ready) return;
+    setEntering(true);
+    const timer = setTimeout(() => setEntering(false), ENTER_MS);
+    return () => clearTimeout(timer);
+  }, [ready, week.id]);
+
   return (
     <>
       {/* высота известна заранее — резервируем её, чтобы появление календаря
           не сдвигало легенду и подвал */}
-      <div className="board" style={{ "--board-h": `${model.boardHeight}px` }}>
+      <div
+        className={`board${entering ? " enter" : ""}`}
+        style={{ "--board-h": `${model.boardHeight}px` }}
+      >
         {view ? (
           <FullCalendar
             /* key: initialDate применяется только при монтировании, поэтому при
@@ -201,26 +262,39 @@ export default function Timetable({ week, allSubjects }) {
             eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
             noEventsText="На эту неделю занятий нет"
             events={model.events}
+            eventClassNames={eventClassNames}
+            eventDidMount={eventDidMount}
+            nowIndicatorContent={(arg) =>
+              arg.isAxis ? <span className="now-pill">{hhmm(arg.date.getHours() * 60 + arg.date.getMinutes())}</span> : null
+            }
             dayHeaderContent={(arg) => {
               const date = isoOfDate(arg.date);
               const free = !model.busyDates.has(date);
+              const today = date === nowDay;
               const [y, m, d] = date.split("-");
               return (
-                <div className={`dayhead${free ? " free" : ""}`}>
-                  <span className="dn">{ET_WEEKDAYS[arg.date.getDay()]}</span>
+                <div className={`dayhead${free ? " free" : ""}${today ? " is-today" : ""}`}>
+                  <span className="dn">
+                    {ET_WEEKDAYS[arg.date.getDay()]}
+                    {today ? <span className="today-tag">Täna</span> : null}
+                  </span>
                   <span className={free ? "free-tag" : "dd"}>{free ? "Tunde pole" : `${d}.${m}.${y}`}</span>
                 </div>
               );
             }}
             eventContent={(arg) => {
               const p = arg.event.extendedProps;
+              const live = phase(p) === "live";
               if (arg.event.display === "background") {
                 return <div className="fc-event-title">{arg.event.title}</div>;
               }
               if (arg.view.type === "listWeek") {
                 return (
                   <div>
-                    <div className="lname">{arg.event.title}</div>
+                    <div className="lname">
+                      {arg.event.title}
+                      {live ? <span className="live-tag">идёт</span> : null}
+                    </div>
                     <div className="lmeta">
                       {[p.teacher, p.room, p.lessons > 1 ? plural(p.lessons) : null, p.groups]
                         .filter(Boolean)
@@ -231,6 +305,15 @@ export default function Timetable({ week, allSubjects }) {
               }
               return (
                 <div className="ev">
+                  {live ? (
+                    <div
+                      className="ev-elapsed"
+                      aria-hidden="true"
+                      style={{
+                        height: `${((nowMinute - toMinutes(p.from)) / (toMinutes(p.to) - toMinutes(p.from))) * 100}%`,
+                      }}
+                    />
+                  ) : null}
                   <div className="name">{arg.event.title}</div>
                   <div className="t">
                     {p.from} – {p.to}
@@ -253,15 +336,17 @@ export default function Timetable({ week, allSubjects }) {
       <section className="legend">
         <h2>Предметы недели</h2>
         <div className="subs">
-          {model.subjects.map(([name, stat]) => {
+          {model.subjects.map(([name, stat], i) => {
             const minutes = stat.lessons * LESSON_MINUTES;
             const h = Math.floor(minutes / 60);
             const m = minutes % 60;
             return (
               <div
-                className="sub"
+                className="sub rise"
                 key={name}
-                style={{ "--fill": stat.color.bg, "--bar": stat.color.border }}
+                style={{ "--fill": stat.color.bg, "--bar": stat.color.border, "--i": 3 + i }}
+                onMouseEnter={() => setHovered(name)}
+                onMouseLeave={() => setHovered(null)}
               >
                 <div>
                   <div className="name">{name}</div>

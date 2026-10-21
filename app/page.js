@@ -17,7 +17,7 @@ export default async function Page({ searchParams }) {
     <main className="wrap">
       {/* key: при переходе на другую неделю нужна та же заглушка, а не
           застывшее расписание предыдущей */}
-      <Suspense key={params?.w ?? ""} fallback={<WeekSkeleton />}>
+      <Suspense key={params?.w ?? ""} fallback={<WeekSkeleton withToday={!params?.w} />}>
         <WeekPage wanted={params?.w} />
       </Suspense>
     </main>

@@ -20,7 +20,7 @@ export default async function EmbedPage({ searchParams }) {
     <main className="wrap embed">
       {/* вне Suspense: высота нужна родителю и пока показана заглушка */}
       <EmbedResize />
-      <Suspense key={params?.w ?? ""} fallback={<WeekSkeleton />}>
+      <Suspense key={params?.w ?? ""} fallback={<WeekSkeleton withToday={!params?.w} />}>
         <WeekPage wanted={params?.w} embed />
       </Suspense>
     </main>

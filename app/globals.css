@@ -10,6 +10,10 @@
   --danger:#c0334d;
   --ok:#1f7e48;
   --shadow:0 1px 2px rgba(20,26,34,.06), 0 8px 24px -16px rgba(20,26,34,.28);
+  /* «сейчас»: линия времени, идущий урок, полоска загрузки */
+  --live:#e0475f;
+  --progress:#3370b6;
+  --ease:cubic-bezier(.2,.8,.2,1);
   /* заглушки на время загрузки */
   --skel-a:#e4e9ef;
   --skel-b:#f2f5f8;
@@ -18,7 +22,7 @@
   --fc-page-bg-color:#ffffff;
   --fc-border-color:#dde3ea;
   --fc-neutral-bg-color:rgba(20,26,34,.035);
-  --fc-today-bg-color:transparent;
+  --fc-today-bg-color:rgba(224,71,95,.035);
   --fc-now-indicator-color:#e0475f;
   --fc-list-event-hover-bg-color:#f7f9fb;
 }
@@ -49,6 +53,21 @@ h1 .grp{display:block;font-size:.42em;font-weight:400;letter-spacing:-.005em;col
 /* выбор недели */
 .weekpick{display:flex;align-items:center;gap:9px}
 .weekpick > span{font-size:11px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.weekpick-ctl{display:flex;align-items:center;gap:5px}
+.wk-arrow{
+  width:33px;height:33px;padding:0;flex:none;display:grid;place-items:center;
+  font-size:19px;line-height:1;color:var(--ink-2)
+}
+.wk-arrow:hover:not(:disabled){color:var(--ink);background:var(--surface-2)}
+.skel-arrow{border:1px solid var(--hair);border-radius:8px;background:var(--surface)}
+.to-today{
+  padding:5px 11px;border-radius:20px;font-size:12px;
+  color:var(--live);border-color:color-mix(in srgb,var(--live) 35%,transparent);
+  background:color-mix(in srgb,var(--live) 6%,var(--surface));animation:rise .4s var(--ease) backwards
+}
+.to-today:hover:not(:disabled){border-color:var(--live)}
+/* пока грузится другая неделя, нынешняя приглушена — видно, что клик принят */
+.wrap:has(.weekpick[aria-busy=true]) :is(.board,.today,.legend){opacity:.55;filter:saturate(.7);transition:opacity .25s,filter .25s}
 select,input[type=password],input[type=file]{
   font:inherit;font-size:13.5px;color:var(--ink);background:var(--surface);
   border:1px solid var(--hair);border-radius:8px;padding:7px 11px
@@ -59,6 +78,11 @@ button{
   border:1px solid var(--hair);background:var(--surface);color:var(--ink);
   border-radius:8px;padding:7px 14px
 }
+button,select,.optout{
+  transition:background-color .2s,border-color .2s,color .2s,box-shadow .2s,transform .15s var(--ease)
+}
+button:hover:not(:disabled),select:hover:not(:disabled){border-color:#c3ccd7}
+button:active:not(:disabled){transform:scale(.96)}
 button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 button.danger{background:transparent;border-color:transparent;color:var(--danger);padding:4px 8px}
 button:disabled{opacity:.55;cursor:default}
@@ -101,6 +125,11 @@ button:disabled{opacity:.55;cursor:default}
 .dayhead .dn{font-size:14.5px;font-weight:600;letter-spacing:-.012em;color:var(--ink)}
 .dayhead .dd{font-size:11.5px;color:var(--ink-3);letter-spacing:.02em}
 .dayhead.free .dn{color:var(--ink-3)}
+.dayhead.is-today .dn{color:var(--live)}
+.today-tag{
+  margin-left:7px;padding:2px 6px;border-radius:9px;vertical-align:2px;
+  font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:var(--live)
+}
 .dayhead .free-tag{font-size:10.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
 
 /* Карточка занятия: насыщенная заливка предмета, белый текст, тёмная плашка
@@ -114,6 +143,8 @@ button:disabled{opacity:.55;cursor:default}
    преподаватель, прижатый к нижнему краю, отрывался от названия и читался как
    подпись к соседнему занятию. Заливка ниже текста остаётся просто цветом. */
 .ev{position:relative;height:100%;padding:7px 10px;display:flex;flex-direction:column;overflow:hidden}
+/* текст поверх заливки «прошло» у идущего урока */
+.ev > :is(.name,.t,.shared,.meta){position:relative}
 .ev .name{
   font-weight:600;font-size:15px;line-height:1.25;letter-spacing:-.015em;
   padding-right:28px;text-wrap:balance
@@ -131,6 +162,66 @@ button:disabled{opacity:.55;cursor:default}
   position:absolute;top:8px;right:9px;font-size:11px;font-weight:600;letter-spacing:.01em;
   color:rgba(255,255,255,.82)
 }
+
+/* Состояния занятий относительно «сейчас» и подсветка предмета из легенды. */
+.fc .fc-timegrid-event{
+  transition:opacity .45s,filter .45s,box-shadow .25s,transform .25s var(--ease)
+}
+.fc .fc-timegrid-event:hover{
+  filter:brightness(1.06);transform:translateY(-1px);
+  box-shadow:0 10px 20px -10px rgba(20,26,34,.55)
+}
+.fc .fc-timegrid-event.is-past{opacity:.55;filter:saturate(.55)}
+.fc .fc-timegrid-event.is-past:hover{opacity:.85;filter:none}
+.fc .fc-timegrid-event.is-live{animation:live-ring 2.4s ease-in-out infinite}
+.fc .fc-timegrid-event.is-dim,.fc .fc-list-event.is-dim{opacity:.16;filter:saturate(.3)}
+.fc .fc-list-event{transition:opacity .45s,background-color .3s}
+.fc .fc-list-event.is-past{opacity:.5}
+.fc .fc-list-event.is-live td{background:rgba(224,71,95,.05)}
+@keyframes live-ring{
+  0%,100%{box-shadow:0 0 0 2px #fff,0 0 0 4px rgba(224,71,95,.55)}
+  50%{box-shadow:0 0 0 2px #fff,0 0 0 7px rgba(224,71,95,.12)}
+}
+/* прошедшая часть идущего урока — затемнение до текущей минуты */
+.ev-elapsed{
+  position:absolute;left:0;right:0;top:0;pointer-events:none;
+  background:rgba(10,14,20,.16);border-bottom:2px solid rgba(255,255,255,.8);
+  transition:height .8s var(--ease)
+}
+.live-tag{
+  margin-left:8px;padding:1px 7px;border-radius:9px;font-size:10.5px;font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--live);vertical-align:1px
+}
+
+/* Линия «сейчас»: толще штатной, с пульсирующей точкой и временем на оси. */
+.fc .fc-timegrid-now-indicator-line{
+  border-width:2px 0 0;z-index:6;box-shadow:0 0 0 2px rgba(224,71,95,.14)
+}
+.fc .fc-timegrid-now-indicator-line::before{
+  content:"";position:absolute;left:-6px;top:-7px;width:12px;height:12px;border-radius:50%;
+  background:var(--live);box-shadow:0 0 0 2px #fff;animation:dot-ring 2s ease-out infinite
+}
+@keyframes dot-ring{
+  0%{box-shadow:0 0 0 2px #fff,0 0 0 2px rgba(224,71,95,.5)}
+  100%{box-shadow:0 0 0 2px #fff,0 0 0 12px rgba(224,71,95,0)}
+}
+.fc .fc-timegrid-now-indicator-arrow{border:0;margin-top:-9px;left:0;right:0;display:flex;justify-content:center}
+.now-pill{
+  display:block;padding:2px 6px;border-radius:9px;line-height:14px;
+  font-size:11px;font-weight:600;letter-spacing:.02em;color:#fff;background:var(--live)
+}
+
+/* Въезд сетки: календарь проявляется, карточки встают по очереди (задержку
+   каждой пишет eventDidMount в --d). Класс .enter снимается через секунду с
+   небольшим, и перерисовки по часам анимацию уже не повторяют. */
+.board .fc{animation:fade .35s ease-out backwards}
+.board.enter .fc-timegrid-event{animation:ev-in .55s var(--ease) backwards;animation-delay:var(--d,0ms)}
+.board.enter .fc-list-event{animation:rise .45s var(--ease) backwards;animation-delay:calc(var(--d,0ms) * .6)}
+@keyframes ev-in{from{opacity:0;transform:translateY(12px) scale(.96)}}
+@keyframes fade{from{opacity:0}}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+/* данные, пришедшие на смену заглушке, проявляются, а не выскакивают */
+.rise{animation:rise .55s var(--ease) backwards;animation-delay:calc(var(--i,0) * 60ms)}
 
 .fc .fc-bg-event.lunch{background:rgba(20,26,34,.035);opacity:1}
 .fc .fc-bg-event.lunch .fc-event-title{
@@ -157,7 +248,12 @@ button:disabled{opacity:.55;cursor:default}
 .sub{
   display:flex;gap:10px;align-items:flex-start;padding:10px 13px;color:#fff;
   background:var(--fill,var(--surface));
-  border-left:4px solid var(--bar,var(--hair))
+  border-left:4px solid var(--bar,var(--hair));
+  transition:transform .25s var(--ease),box-shadow .25s
+}
+.subs .sub:not(.skel-sub):hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 22px -14px var(--fill)
 }
 .sub .name{font-weight:600;font-size:14.5px;line-height:1.25;letter-spacing:-.015em}
 .sub .who{font-size:12.5px;line-height:1.35;color:rgba(255,255,255,.88);margin-top:2px}
@@ -222,6 +318,132 @@ button:disabled{opacity:.55;cursor:default}
   .skel,.skel-ev{animation:none;background:var(--skel-a)}
 }
 
+/* ---------- сегодня ---------- */
+.today{
+  position:relative;margin:0 0 14px;padding:16px 18px 16px;
+  background:var(--surface);border:1px solid var(--hair);box-shadow:var(--shadow);overflow:hidden
+}
+.today-top{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 32px;margin-bottom:14px}
+.today-status{flex:1;min-width:0}
+.today-when{
+  display:flex;align-items:center;gap:9px;margin:0 0 7px;
+  font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)
+}
+.live-dot{position:relative;width:8px;height:8px;flex:none;border-radius:50%;background:var(--live)}
+.live-dot::after{
+  content:"";position:absolute;inset:0;border-radius:50%;background:var(--live);
+  animation:pulse 1.8s ease-out infinite
+}
+@keyframes pulse{from{transform:scale(1);opacity:.6}to{transform:scale(3.2);opacity:0}}
+.today-headline{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
+.today-headline b{
+  font-size:22px;font-weight:650;line-height:1.2;letter-spacing:-.02em;
+  animation:rise .5s var(--ease) backwards
+}
+.today-count{
+  padding:3px 10px;border-radius:20px;font-size:13px;font-weight:600;white-space:nowrap;
+  color:var(--live);background:color-mix(in srgb,var(--live) 10%,transparent)
+}
+.today-sub{margin:6px 0 0;font-size:13px;line-height:1.4;color:var(--ink-2)}
+.today-meter{width:230px;text-align:right}
+.today-meter-nums{font-size:12.5px;color:var(--ink-2)}
+.today-meter-nums b{font-size:15px;font-weight:600;color:var(--ink)}
+.meter{
+  position:relative;height:6px;margin:7px 0 6px;border-radius:6px;overflow:hidden;
+  background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--hair)
+}
+.meter span{
+  position:absolute;inset:0 auto 0 0;border-radius:6px;background:var(--progress);
+  transition:width 1s linear;animation:grow .9s var(--ease) backwards .2s
+}
+/* по идущему дню бегут блики — шкала живая, даже когда минута не сменилась */
+.is-live .meter span{
+  background-image:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%);
+  background-size:200% 100%;animation:grow .9s var(--ease) backwards .2s,sheen 2.2s linear infinite
+}
+@keyframes grow{from{width:0}}
+@keyframes sheen{from{background-position:200% 0}to{background-position:-200% 0}}
+.today-meter-cap{font-size:11.5px;color:var(--ink-3);letter-spacing:.02em}
+
+/* трек: уроки на оси времени; на узком экране он шире окна и листается */
+.today-scroll{overflow-x:auto;overflow-y:hidden;margin:0 -18px;padding:0 18px;scrollbar-width:thin}
+.today-track{position:relative;height:80px;min-width:calc(var(--span,480) * 1.5px)}
+.tick{position:absolute;top:0;bottom:0;border-left:1px dashed var(--hair)}
+.tick i{
+  position:absolute;top:0;left:5px;font-style:normal;font-size:11px;font-weight:500;
+  letter-spacing:.03em;color:var(--ink-3);transition:opacity .3s
+}
+.tick i.under{opacity:0}
+.passed{
+  position:absolute;left:0;top:22px;bottom:0;transition:width 1s linear;
+  background:repeating-linear-gradient(135deg,rgba(20,26,34,.045) 0 6px,transparent 6px 12px)
+}
+.today-gap{
+  position:absolute;top:22px;bottom:0;display:grid;place-items:center;
+  font-size:11px;letter-spacing:.04em;color:var(--ink-3);white-space:nowrap;overflow:hidden
+}
+.tb{
+  position:absolute;top:22px;bottom:0;padding:0 10px;overflow:hidden;
+  display:flex;flex-direction:column;justify-content:center;gap:2px;
+  color:#fff;background:var(--c);border-left:4px solid var(--cb);
+  transition:opacity .6s,filter .6s;
+  animation:wipe .7s var(--ease) backwards;animation-delay:calc(150ms + var(--i,0) * 90ms)
+}
+@keyframes wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0)}}
+.tb > span:not(.tb-fill){position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-name{font-size:13.5px;font-weight:600;letter-spacing:-.012em}
+.tb-meta{font-size:11.5px;color:rgba(255,255,255,.86)}
+.tb.done{opacity:.4;filter:saturate(.45)}
+.tb.live{
+  z-index:1;overflow:visible;
+  animation:wipe .7s var(--ease) backwards,tb-glow 2.4s ease-in-out infinite;
+  animation-delay:calc(150ms + var(--i,0) * 90ms),0s
+}
+@keyframes tb-glow{
+  0%,100%{box-shadow:0 0 0 2px var(--surface),0 0 0 4px color-mix(in srgb,var(--c) 55%,transparent)}
+  50%{box-shadow:0 0 0 2px var(--surface),0 0 0 7px color-mix(in srgb,var(--c) 15%,transparent)}
+}
+.tb-fill{
+  position:absolute;inset:0 auto 0 0;width:var(--p);background:rgba(10,14,20,.17);
+  border-right:2px solid rgba(255,255,255,.8);transition:width 1s linear
+}
+.nowline{position:absolute;top:0;bottom:-2px;width:0;z-index:3;transition:left 1s linear}
+.nowline::after{
+  content:"";position:absolute;top:17px;bottom:0;left:-1px;width:2px;background:var(--live);
+  box-shadow:0 0 0 3px rgba(224,71,95,.16)
+}
+.nowline::before{
+  content:"";position:absolute;bottom:-4px;left:-5px;width:10px;height:10px;border-radius:50%;
+  background:var(--live);animation:dot-ring 2s ease-out infinite
+}
+.nowtag{
+  position:absolute;top:0;left:0;transform:translateX(-50%);z-index:1;
+  padding:2px 7px;border-radius:9px;line-height:14px;
+  font-size:11px;font-weight:600;color:#fff;background:var(--live)
+}
+
+.today-over{display:flex;align-items:center;gap:13px;padding:14px 18px}
+.today-over b{display:block;font-size:15px;font-weight:600;letter-spacing:-.012em}
+.today-over span:not(.today-check){font-size:12.5px;color:var(--ink-2)}
+.today-check{
+  width:30px;height:30px;flex:none;border-radius:50%;display:grid;place-items:center;
+  font-size:15px;font-weight:700;color:#fff;background:var(--ok);animation:pop .5s var(--ease) backwards .15s
+}
+@keyframes pop{from{transform:scale(.3);opacity:0}}
+.skel-today .tb{border:0;animation:skel-slide 1.35s linear infinite;border-radius:0}
+
+/* полоска загрузки вверху окна */
+.navbar{
+  position:fixed;top:0;left:0;right:0;height:3px;z-index:100;overflow:hidden;pointer-events:none;
+  animation:fade .3s ease-out .15s backwards
+}
+.navbar::before{
+  content:"";position:absolute;top:0;bottom:0;left:0;width:45%;
+  background:linear-gradient(90deg,transparent,var(--progress) 60%,#7fb0ec);
+  animation:navbar 1.15s var(--ease) infinite
+}
+@keyframes navbar{from{transform:translateX(-100%)}to{transform:translateX(230%)}}
+
 footer{
   margin-top:26px;padding-top:14px;border-top:1px solid var(--hair);
   font-size:11.5px;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:6px 18px
@@ -277,6 +499,19 @@ table.weeks td.num{font-weight:500}
   .stats{gap:20px}
   select{min-width:0;width:100%}
   .weekpick{width:100%;flex-wrap:wrap}
+  .weekpick-ctl{flex:1 1 100%}
+  .weekpick-ctl select,.weekpick-ctl .skel-select{flex:1;min-width:0}
+  .today{padding:14px 14px 14px}
+  .today-scroll{margin:0 -14px;padding:0 14px}
+  .today-meter{width:100%;text-align:left}
+  .today-headline b{font-size:19px}
+}
+/* движение — по желанию: при «уменьшить движение» всё встаёт на место сразу */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;animation-iteration-count:1!important;
+    animation-delay:0s!important;transition-duration:.01ms!important
+  }
 }
 /* ---------- встраивание (/embed) ---------- */
 /* фон и поля даёт сайт-родитель; немного отступа оставляем под тень сетки */
@@ -321,7 +556,7 @@ body:has(.embed){background:transparent}
   body{background:#fff}
   .wrap{max-width:none;padding:0}
   .board{box-shadow:none}
-  .weekpick,footer,.adminbar,.optouts{display:none}
+  .weekpick,footer,.adminbar,.optouts,.today,.navbar{display:none}
   @page{size:A4 landscape;margin:12mm}
 }
 :focus-visible{outline:2px solid #3370b6;outline-offset:2px}

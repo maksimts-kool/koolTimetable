@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import IcalLink from "@/components/IcalLink";
 import Timetable from "@/components/Timetable";
+import TodayStrip from "@/components/TodayStrip";
 import WeekPicker from "@/components/WeekPicker";
 import { hideSubjects, optionalsIn, parseHidden } from "@/lib/optional";
 
@@ -16,10 +17,12 @@ const STORAGE_KEY = "tunniplaan:hidden";
  *
  * @param subjects названия предметов по всем неделям сразу — по ним считается
  *   палитра, поэтому предмет выглядит одинаково в любой неделе
+ * @param initialNow время сервера по Таллину — с ним совпадает первая
+ *   отрисовка полосы «сегодня»
  * @param embed страница во фрейме на чужом сайте: без ссылки на админку, а
  *   выбор недели остаётся на /embed
  */
-export default function WeekView({ week, weeks, current, subjects, embed = false }) {
+export default function WeekView({ week, weeks, current, subjects, initialNow, embed = false }) {
   const [hidden, setHidden] = useState(() => new Set());
 
   // localStorage читаем после гидрации: на сервере его нет, а разошедшуюся
@@ -47,9 +50,11 @@ export default function WeekView({ week, weeks, current, subjects, embed = false
     }
   }
 
-  const minutes = shown.lessonCount * 45;
+  const minutes = useTween(shown.lessonCount * 45);
   const hours =
     Math.floor(minutes / 60) + (minutes % 60 ? `:${String(minutes % 60).padStart(2, "0")}` : "");
+  const lessons = useTween(shown.lessonCount);
+  const days = useTween(shown.days.length);
 
   return (
     <>
@@ -58,17 +63,22 @@ export default function WeekView({ week, weeks, current, subjects, embed = false
           <p className="eyebrow">Tallinna Tehnoloogiakolledž</p>
           <h1>
             Tunniplaan
-            <span className="grp">
+            <span className="grp rise">
               {week.group}
               {week.programme ? ` · ${week.programme}` : ""}
             </span>
           </h1>
         </div>
         <div className="right">
-          <WeekPicker weeks={weeks} current={current} path={embed ? "/embed" : "/"} />
-          <div className="stats">
+          <WeekPicker
+            weeks={weeks}
+            current={current}
+            today={initialNow.day}
+            path={embed ? "/embed" : "/"}
+          />
+          <div className="stats rise">
             <div className="stat">
-              <b>{shown.lessonCount}</b>
+              <b>{lessons}</b>
               <span>уроков</span>
             </div>
             <div className="stat">
@@ -76,7 +86,7 @@ export default function WeekView({ week, weeks, current, subjects, embed = false
               <span>часов</span>
             </div>
             <div className="stat">
-              <b>{shown.days.length}</b>
+              <b>{days}</b>
               <span>учебных дней</span>
             </div>
           </div>
@@ -99,6 +109,8 @@ export default function WeekView({ week, weeks, current, subjects, embed = false
         </div>
       ) : null}
 
+      <TodayStrip week={shown} allSubjects={subjects} initialNow={initialNow} />
+
       <Timetable week={shown} allSubjects={subjects} />
 
       <footer>
@@ -112,4 +124,38 @@ export default function WeekView({ week, weeks, current, subjects, embed = false
       </footer>
     </>
   );
+}
+
+/**
+ * Число, которое не прыгает, а докручивается до нового значения: галочка
+ * «не хожу» меняет счётчики в шапке, и так видно, что именно поменялось.
+ * Первая отрисовка — сразу итоговое число, как его отдал сервер.
+ */
+function useTween(value, ms = 450) {
+  const [shown, setShown] = useState(value);
+  const from = useRef(value);
+
+  useEffect(() => {
+    const start = from.current;
+    if (start === value) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      from.current = value;
+      setShown(value);
+      return;
+    }
+    const t0 = performance.now();
+    let frame;
+    const step = (t) => {
+      const k = Math.min((t - t0) / ms, 1);
+      const eased = 1 - (1 - k) ** 3;
+      const next = Math.round(start + (value - start) * eased);
+      from.current = next;
+      setShown(next);
+      if (k < 1) frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [value, ms]);
+
+  return shown;
 }

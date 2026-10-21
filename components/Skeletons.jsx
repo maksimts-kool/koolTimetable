@@ -95,10 +95,18 @@ export function BoardSkeleton({ height }) {
   );
 }
 
-/** Вся страница недели целиком: шапка, сетка и легенда. */
-export default function WeekSkeleton() {
+/**
+ * Вся страница недели целиком: шапка, сетка и легенда.
+ *
+ * @param withToday место под полосу «сегодня»: без выбранной недели открывается
+ *   текущая, а у неё полоса почти всегда есть — резервируем её, чтобы
+ *   появление полосы не сдвигало сетку
+ */
+export default function WeekSkeleton({ withToday = false }) {
   return (
     <>
+      {/* полоска загрузки вверху окна: заглушка видна ровно, пока идёт загрузка */}
+      <div className="navbar" aria-hidden="true" />
       <header className="head">
         <div>
           <p className="eyebrow">Tallinna Tehnoloogiakolledž</p>
@@ -112,7 +120,11 @@ export default function WeekSkeleton() {
         <div className="right">
           <div className="weekpick">
             <span>Неделя</span>
-            <span className="skel skel-select" />
+            <div className="weekpick-ctl">
+              <span className="wk-arrow skel-arrow" />
+              <span className="skel skel-select" />
+              <span className="wk-arrow skel-arrow" />
+            </div>
           </div>
           <div className="stats">
             {["уроков", "часов", "учебных дней"].map((label) => (
@@ -126,6 +138,33 @@ export default function WeekSkeleton() {
           </div>
         </div>
       </header>
+
+      {withToday ? (
+        <div className="today skel-today" aria-hidden="true">
+          <div className="today-top">
+            <div className="today-status">
+              <span className="skel skel-line sm" style={{ width: 150 }} />
+              <span className="skel skel-line" style={{ width: 260, height: 22, marginTop: 9 }} />
+              <span className="skel skel-line sm" style={{ width: 210, marginTop: 9 }} />
+            </div>
+            <div className="today-meter">
+              <span className="skel skel-line sm" style={{ width: 90, marginLeft: "auto" }} />
+              <span className="skel skel-line" style={{ width: "100%", height: 6, marginTop: 9 }} />
+            </div>
+          </div>
+          <div className="today-scroll">
+            <div className="today-track">
+              {[
+                [4, 22],
+                [28, 22],
+                [56, 34],
+              ].map(([left, width]) => (
+                <span key={left} className="skel tb" style={{ left: `${left}%`, width: `${width}%` }} />
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="board">
         <BoardSkeleton />
