@@ -460,8 +460,6 @@ input.invalid{border-color:var(--danger)}
 
 /* ---------- подвал ---------- */
 .site-foot{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--ink-3)}
-.site-foot a{color:var(--ink-3)}
-.site-foot a:hover{color:var(--ink)}
 
 /* ---------- админка ---------- */
 .sync-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px}

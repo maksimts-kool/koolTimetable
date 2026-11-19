@@ -18,8 +18,7 @@ import { hideSubjects } from "@/lib/optional";
  *
  * @param subjects названия предметов по всем неделям сразу — по ним считается
  *   палитра, поэтому предмет выглядит одинаково в любой неделе
- * @param embed страница во фрейме на чужом сайте: без ссылки на админку, а
- *   выбор недели остаётся на /embed
+ * @param embed страница во фрейме на чужом сайте: выбор недели остаётся на /embed
  */
 export default function WeekView({ week, weeks, current, subjects, initialNow, embed = false }) {
   const [hidden] = useHidden();
@@ -73,7 +72,7 @@ export default function WeekView({ week, weeks, current, subjects, initialNow, e
         <p className="hint-line">Нажми на занятие, чтобы увидеть преподавателя, кабинеты и все занятия предмета на неделе.</p>
       </div>
 
-      <SiteFooter week={week} embed={embed} />
+      <SiteFooter week={week} />
 
       {visible ? (
         <SubjectDialog
