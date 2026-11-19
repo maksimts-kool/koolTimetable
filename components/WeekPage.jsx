@@ -36,8 +36,7 @@ export default async function WeekPage({ wanted, embed = false }) {
           <b>Пока ни одной недели</b>
           {embed ? null : (
             <>
-              Синхронизируйте расписание в <Link href="/admin">админке</Link> — или загрузите
-              PDF-выгрузку.
+              Синхронизируйте расписание в <Link href="/admin">админке</Link>.
             </>
           )}
         </div>

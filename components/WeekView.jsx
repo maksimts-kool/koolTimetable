@@ -117,7 +117,7 @@ export default function WeekView({ week, weeks, current, subjects, initialNow, e
       <footer>
         <span>Источник: {week.fileName}</span>
         <span>
-          {week.source === "pdf" ? "Загружено" : "Обновлено"}{" "}
+          Обновлено{" "}
           {new Date(week.uploadedAt).toLocaleDateString("ru-RU")}
         </span>
         <IcalLink hide={[...hidden].join(",")} />
