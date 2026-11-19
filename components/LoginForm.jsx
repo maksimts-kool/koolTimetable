@@ -33,10 +33,7 @@ export default function LoginForm() {
     <main className="login">
       <form onSubmit={submit} className="login-card">
         <span className="brand">
-          <span className="brand-mark" aria-hidden="true">
-            <span />
-          </span>
-          <span className="brand-name">Tunniplaan</span>
+          <img src="/logo.png" alt="Tunniplaan TARpv24" className="brand-logo" width="590" height="132" />
         </span>
         <div>
           <h1>Вход в админку</h1>

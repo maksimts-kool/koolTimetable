@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import OptSwitch from "@/components/OptSwitch";
 import SimBadge from "@/components/SimBadge";
 import useHidden from "@/components/useHidden";
 import useNow from "@/components/useNow";
@@ -21,7 +20,7 @@ import {
   weekdayIndex,
 } from "@/lib/format";
 import { addDays, toMinutes } from "@/lib/lessons";
-import { hideSubjects, optionalIdOf, optionalsIn } from "@/lib/optional";
+import { hideSubjects } from "@/lib/optional";
 
 /** Перерыв по длине: короткий — перемена, около часа — обед, дольше — окно. */
 const breakKind = (minutes) => (minutes <= 15 ? "Перемена" : minutes <= 60 ? "Обед" : "Окно");
@@ -38,9 +37,8 @@ const place = (b) => [b.room ? `кабинет ${b.room}` : null, b.teacher || n
  */
 export default function TodayView({ weeks, subjects, initialNow }) {
   const now = useNow(initialNow, 1000);
-  const [hidden, setAttends] = useHidden();
+  const [hidden] = useHidden();
 
-  const optional = useMemo(() => optionalsIn(weeks), [weeks]);
   const palette = useMemo(
     () =>
       assignColors([
@@ -172,11 +170,6 @@ export default function TodayView({ weeks, subjects, initialNow }) {
       ]
     : [];
 
-  const optColor = (o) => {
-    for (const [name, c] of palette) if (optionalIdOf(name) === o.id) return c.bg;
-    return null;
-  };
-
   return (
     <>
       <section className="page-top rise" style={{ "--i": 0 }}>
@@ -187,15 +180,6 @@ export default function TodayView({ weeks, subjects, initialNow }) {
           <p className="sub">Неделя {isoWeek(now.day)}</p>
         </div>
         <div className="page-tools">
-          {optional.map((o) => (
-            <OptSwitch
-              key={o.id}
-              option={o}
-              attends={!hidden.has(o.id)}
-              onChange={setAttends}
-              color={optColor(o)}
-            />
-          ))}
           <Link href="/week" className="tool-link">
             Вся неделя
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

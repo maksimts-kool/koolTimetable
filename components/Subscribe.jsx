@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { OPEN_SETTINGS } from "@/components/SettingsMenu";
 import useHidden from "@/components/useHidden";
 import { OPTIONAL_SUBJECTS } from "@/lib/optional";
 
@@ -39,7 +40,7 @@ const APPS = [
  * на телефоне и в macOS сразу предлагает подписаться.
  */
 export default function Subscribe() {
-  const [hidden, setAttends] = useHidden();
+  const [hidden] = useHidden();
   const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState(0);
@@ -67,7 +68,7 @@ export default function Subscribe() {
         <div>
           <h1>Расписание в твоём календаре</h1>
           <p className="sub">
-            Подпишись один раз — занятия появятся в телефоне и будут обновляться сами, когда меняется расписание.
+            Занятия которые будут обновляться сами.
           </p>
         </div>
       </div>
@@ -89,10 +90,11 @@ export default function Subscribe() {
           </a>
         </div>
         {OPTIONAL_SUBJECTS.map((o) => (
-          <label key={o.id} className="feed-check">
-            <input type="checkbox" checked={!hidden.has(o.id)} onChange={(e) => setAttends(o.id, e.target.checked)} />
-            Включать {o.label}
-          </label>
+          <p key={o.id} className="feed-note">
+            {o.short} {hidden.has(o.id) ? "скрыт" : "включён"} · <button type="button" className="link-btn" onClick={() => window.dispatchEvent(new Event(OPEN_SETTINGS))}>
+              изменить
+            </button>
+          </p>
         ))}
       </section>
 
@@ -124,8 +126,7 @@ export default function Subscribe() {
       </section>
 
       <p className="hint-line rise" style={{ "--i": 3 }}>
-        Календари обновляют подписки не мгновенно: Google — раз в несколько часов, Apple и Outlook — чаще. Время
-        занятий — по Таллину.
+        Календари обновляют подписки не мгновенно.
       </p>
     </>
   );

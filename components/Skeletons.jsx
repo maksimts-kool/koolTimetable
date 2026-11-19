@@ -28,7 +28,7 @@ const line = (width, height, extra) => (
   <span className="skel skel-line" style={{ width, height, ...extra }} />
 );
 
-function TopSkeleton({ title = 220, tools = 2 }) {
+function TopSkeleton({ title = 220, tools = 1 }) {
   return (
     <section className="page-top" aria-hidden="true">
       <div>
@@ -37,7 +37,7 @@ function TopSkeleton({ title = 220, tools = 2 }) {
       </div>
       <div className="page-tools">
         {Array.from({ length: tools }, (_, i) => (
-          <span key={i} className="skel skel-tool" style={{ width: i ? 200 : 250 }} />
+          <span key={i} className="skel skel-tool" style={{ width: 200 }} />
         ))}
       </div>
     </section>

@@ -47,21 +47,40 @@ h1,h2,h3{margin:0}
 .site-head{background:var(--surface);border-bottom:1px solid var(--hair);position:sticky;top:0;z-index:20}
 .site-head-in{
   max-width:1240px;margin:0 auto;padding:10px 20px;
-  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px
 }
 .brand{display:flex;align-items:center;gap:10px;min-height:44px;text-decoration:none;color:var(--ink)}
-.brand-mark{
-  width:28px;height:28px;border-radius:8px;background:var(--ink);flex:none;
-  display:grid;place-items:center
-}
-.brand-mark span{width:10px;height:10px;border-radius:3px;background:var(--accent)}
-.brand-name{font-weight:800;font-size:18px;letter-spacing:-.02em}
-.brand-grp{color:var(--ink-3);font-size:14px}
+.brand-logo{display:block;height:44px;width:auto}
 .brand-tag{
   padding:2px 10px;border-radius:999px;background:var(--accent);color:#fff;
   font-size:13px;font-weight:700;line-height:1.5
 }
-.site-nav{display:flex;flex-wrap:wrap;gap:4px}
+.site-nav{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto}
+/* шестерёнка и панель настроек под ней */
+.settings{position:relative;flex:none}
+.settings-btn{
+  display:grid;place-items:center;width:40px;height:40px;border-radius:999px;cursor:pointer;
+  border:1px solid var(--hair);background:transparent;color:var(--ink-2);transition:background-color .2s,color .2s
+}
+.settings-btn:hover{background:var(--soft);color:var(--ink)}
+.settings-btn.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.settings-btn svg{transition:transform .3s var(--ease)}
+.settings-btn.on svg{transform:rotate(60deg)}
+.settings-pop{
+  position:absolute;right:0;top:calc(100% + 8px);z-index:30;width:min(340px,calc(100vw - 32px));
+  display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:16px;
+  background:var(--surface);border:1px solid var(--hair);box-shadow:0 12px 32px -8px rgba(20,22,28,.22);
+  animation:pop .18s var(--ease)
+}
+@keyframes pop{from{opacity:0;transform:translateY(-4px)}}
+.settings-title{font-size:15px;font-weight:700}
+.settings-pop .optswitch{width:100%}
+.settings-hint{margin:0;font-size:13px;color:var(--ink-3)}
+.settings-admin{
+  display:flex;align-items:center;justify-content:space-between;min-height:44px;padding:0 14px;border-radius:12px;
+  text-decoration:none;font-size:15px;color:var(--ink-2);border:1px solid var(--hair);transition:background-color .2s,color .2s
+}
+.settings-admin:hover{background:var(--soft);color:var(--ink)}
 .site-nav a,.nav-btn{
   position:relative;display:flex;align-items:center;min-height:40px;padding:0 14px;border-radius:999px;
   text-decoration:none;font-size:15px;color:var(--ink-2);background:transparent;border:0;cursor:pointer;
@@ -428,8 +447,8 @@ input.invalid{border-color:var(--danger)}
 .feed-copy.done{background:var(--accent);color:#fff}
 .feed-open{background:transparent;color:#fff;border:1px solid #343846!important}
 .feed-open:hover{background:#1e2129}
-.feed-check{display:flex;align-items:center;gap:10px;min-height:44px;cursor:pointer;font-size:15px}
-.feed-check input{width:18px;height:18px;margin:0;accent-color:var(--accent)}
+.feed-note{margin:0;font-size:15px;color:var(--ink-4)}
+.feed-note .link-btn{padding:0;border:0;background:none;color:#fff;text-decoration:underline;cursor:pointer;font-size:inherit}
 .how{gap:14px}
 .steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
 .steps li{display:flex;gap:14px;align-items:flex-start}
@@ -546,7 +565,9 @@ table.weeks .act{text-align:right;width:56px}
 @media (max-width:720px){
   .wrap{padding:24px 16px 48px}
   .site-head-in{padding:8px 16px}
-  .site-nav{width:100%;justify-content:space-between}
+  .site-nav{width:100%;justify-content:space-between;order:2}
+  /* шестерёнка остаётся в строке с логотипом, разделы — строкой ниже */
+  .settings{order:1}
   .site-nav a{flex:1 1 0;justify-content:center;padding:0 8px;font-size:14px}
   .site-head{position:static}
   .page-top h1{font-size:28px}

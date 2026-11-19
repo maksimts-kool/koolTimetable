@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import OptSwitch from "@/components/OptSwitch";
 import SimBadge from "@/components/SimBadge";
 import SiteFooter from "@/components/SiteFooter";
 import SubjectDialog from "@/components/SubjectDialog";
@@ -11,11 +10,11 @@ import WeekGrid from "@/components/WeekGrid";
 import WeekPicker from "@/components/WeekPicker";
 import { assignColors } from "@/lib/colors";
 import { isoWeek, plural, ruRange } from "@/lib/format";
-import { hideSubjects, optionalIdOf, optionalsIn } from "@/lib/optional";
+import { hideSubjects } from "@/lib/optional";
 
 /**
- * Страница недели целиком на клиенте: переключатель «хожу на B2» меняет и
- * счётчики в шапке, и сетку — держать это состояние в одном месте проще.
+ * Страница недели целиком на клиенте: скрытые в настройках предметы убираются
+ * и из счётчиков в шапке, и из сетки.
  *
  * @param subjects названия предметов по всем неделям сразу — по ним считается
  *   палитра, поэтому предмет выглядит одинаково в любой неделе
@@ -23,11 +22,10 @@ import { hideSubjects, optionalIdOf, optionalsIn } from "@/lib/optional";
  *   выбор недели остаётся на /embed
  */
 export default function WeekView({ week, weeks, current, subjects, initialNow, embed = false }) {
-  const [hidden, setAttends] = useHidden();
+  const [hidden] = useHidden();
   const [selected, setSelected] = useState(null);
   const clock = useNow(initialNow, 60_000);
 
-  const optional = useMemo(() => optionalsIn([week]), [week]);
   const shown = useMemo(() => hideSubjects(week, hidden), [week, hidden]);
   // Палитра — по предметам всех недель: иначе предмет менял бы цвет при
   // переходе на соседнюю неделю. Предметы недели добавляем и сами: общий
@@ -50,11 +48,6 @@ export default function WeekView({ week, weeks, current, subjects, initialNow, e
   const blocks = shown.days.reduce((sum, d) => sum + d.blocks.length, 0);
   const hours = shown.lessonCount;
 
-  const optColor = (o) => {
-    for (const [name, c] of palette) if (optionalIdOf(name) === o.id) return c.bg;
-    return null;
-  };
-
   return (
     <>
       <section className="page-top rise" style={{ "--i": 0 }}>
@@ -66,15 +59,6 @@ export default function WeekView({ week, weeks, current, subjects, initialNow, e
           </p>
         </div>
         <div className="page-tools">
-          {optional.map((o) => (
-            <OptSwitch
-              key={o.id}
-              option={o}
-              attends={!hidden.has(o.id)}
-              onChange={setAttends}
-              color={optColor(o)}
-            />
-          ))}
           <WeekPicker weeks={weeks} current={current} today={clock.day} path={embed ? "/embed" : "/week"} />
         </div>
       </section>
