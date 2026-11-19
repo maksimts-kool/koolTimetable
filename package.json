@@ -8,11 +8,6 @@
     "start": "next start"
   },
   "dependencies": {
-    "@fullcalendar/core": "^6.1.19",
-    "@fullcalendar/daygrid": "^6.1.19",
-    "@fullcalendar/list": "^6.1.19",
-    "@fullcalendar/react": "^6.1.19",
-    "@fullcalendar/timegrid": "^6.1.19",
     "mysql2": "^3.24.4",
     "next": "^15.5.0",
     "react": "^19.0.0",

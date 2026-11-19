@@ -117,7 +117,7 @@ export default function CompactDay({ days, wanted, initialNow }) {
 
       <a
         className="cday-more"
-        href={`/?w=${encodeURIComponent(day.weekId)}`}
+        href={`/week?w=${encodeURIComponent(day.weekId)}`}
         target="_blank"
         rel="noopener"
       >

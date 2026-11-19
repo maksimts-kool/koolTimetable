@@ -1,192 +1,150 @@
 /**
  * Заглушки на время загрузки.
  *
- * Страница отдаётся сразу: шапка и разметка приходят первым куском ответа, а
- * неделя подтягивается потоком — пока её нет, на её месте стоит серая сетка с
- * мерцанием. Так же закрыта и вторая пауза: календарь рисуется только в
- * браузере, и от разметки сервера до его монтирования доска раньше стояла
- * пустой.
- *
- * Размеры взяты те же, что резервирует Timetable под настоящую сетку
- * (шапка дня + пятнадцатиминутные строки по 25px), поэтому подмена заглушки
- * готовым расписанием не сдвигает страницу.
+ * Страница отдаётся сразу: шапка приходит первым куском ответа, а расписание
+ * подтягивается потоком — пока его нет, на его месте стоят серые формы той же
+ * раскладки с мерцанием, и подмена готовыми данными почти не сдвигает страницу.
  */
 
-const DAY_HEADER_PX = 60;
-const PX_PER_MINUTE = 25 / 15;
-
-// Типовые границы учебного дня: сетка недели почти всегда попадает в них, и
-// заглушка получается той же высоты, что и расписание.
+const HOUR_PX = 64;
 const GRID_FROM = 8 * 60;
-const GRID_TO = 16 * 60 + 15;
-
-const BOARD_PX = DAY_HEADER_PX + (GRID_TO - GRID_FROM) * PX_PER_MINUTE;
+const GRID_TO = 16 * 60;
+const PX = HOUR_PX / 60;
 
 const HOURS = [];
-for (let h = GRID_FROM / 60; h <= Math.floor(GRID_TO / 60); h++) HOURS.push(h);
+for (let h = GRID_FROM; h <= GRID_TO; h += 60) HOURS.push(h);
 
-// Расстановка занятий вымышленная, но постоянная: случайные числа на сервере и
-// в браузере разошлись бы, и React ругался бы на несовпадение разметки.
-// Каждая пара — [начало в минутах от полуночи, длительность].
+// Расстановка вымышленная, но постоянная: случайные числа на сервере и в
+// браузере разошлись бы. Каждая пара — [начало в минутах, длительность].
 const SKELETON_DAYS = [
-  [[8 * 60 + 15, 90], [10 * 60 + 15, 135], [13 * 60, 90]],
-  [[9 * 60, 135], [12 * 60 + 30, 90], [14 * 60 + 15, 90]],
-  [[8 * 60 + 15, 180], [12 * 60, 135]],
-  [[10 * 60, 90], [11 * 60 + 45, 90], [13 * 60 + 45, 135]],
-  [[8 * 60 + 45, 135], [11 * 60 + 30, 90]],
+  [[8 * 60 + 30, 195], [12 * 60 + 30, 90], [14 * 60 + 15, 90]],
+  [[8 * 60 + 30, 90], [10 * 60 + 15, 90], [12 * 60 + 30, 90]],
+  [[8 * 60 + 30, 195], [12 * 60 + 30, 195]],
+  [[8 * 60 + 30, 90], [10 * 60 + 15, 90], [12 * 60 + 30, 90], [14 * 60 + 15, 90]],
+  [[8 * 60 + 30, 90], [10 * 60 + 15, 90]],
 ];
 
-const LIST_ROWS = [0, 1, 2, 3, 4, 5, 6];
-const LEGEND_CARDS = [0, 1, 2, 3, 4, 5];
+const line = (width, height, extra) => (
+  <span className="skel skel-line" style={{ width, height, ...extra }} />
+);
 
-/**
- * Сетка недели на время загрузки — и с сервера, и до монтирования календаря.
- *
- * @param height высота настоящей сетки, если она уже известна: тогда подмена
- *   заглушки календарём проходит совсем без сдвига.
- */
-export function BoardSkeleton({ height }) {
+function TopSkeleton({ title = 220, tools = 2 }) {
   return (
-    <div
-      className="skel-cal"
-      style={{ "--skel-board-h": `${Math.round(height || BOARD_PX)}px` }}
-      aria-hidden="true"
-    >
-      <div className="skel-grid">
-        <div className="skel-axis">
-          {HOURS.map((h) => (
-            <span key={h} className="skel-hour" style={{ top: (h * 60 - GRID_FROM) * PX_PER_MINUTE }}>
-              {String(h).padStart(2, "0")}:00
-            </span>
-          ))}
-        </div>
-        {SKELETON_DAYS.map((blocks, day) => (
-          <div className="skel-col" key={day}>
-            <div className="skel-dayhead">
-              <span className="skel skel-line" style={{ width: 82 }} />
-              <span className="skel skel-line sm" style={{ width: 58 }} />
-            </div>
-            <div className="skel-day">
-              {blocks.map(([from, minutes], i) => (
-                <div
-                  key={i}
-                  className="skel-ev"
-                  style={{
-                    top: (from - GRID_FROM) * PX_PER_MINUTE,
-                    height: minutes * PX_PER_MINUTE - 2,
-                  }}
-                />
-              ))}
-            </div>
-          </div>
+    <section className="page-top" aria-hidden="true">
+      <div>
+        {line(title, 32)}
+        {line(170, 14, { marginTop: 10 })}
+      </div>
+      <div className="page-tools">
+        {Array.from({ length: tools }, (_, i) => (
+          <span key={i} className="skel skel-tool" style={{ width: i ? 200 : 250 }} />
         ))}
       </div>
-
-      {/* на узком экране расписание показывается списком — заглушка тоже */}
-      <div className="skel-list">
-        {LIST_ROWS.map((i) => (
-          <div className="skel-row" key={i}>
-            <span className="skel skel-line" style={{ width: 74 }} />
-            <span className="skel skel-line" style={{ width: `${52 + ((i * 13) % 34)}%` }} />
-          </div>
-        ))}
-      </div>
-    </div>
+    </section>
   );
 }
 
-/**
- * Вся страница недели целиком: шапка, сетка и легенда.
- *
- * @param withToday место под полосу «сегодня»: без выбранной недели открывается
- *   текущая, а у неё полоса почти всегда есть — резервируем её, чтобы
- *   появление полосы не сдвигало сетку
- */
-export default function WeekSkeleton({ withToday = false }) {
+/** Неделя сеткой: шапка, сетка и подпись. */
+export default function WeekSkeleton() {
   return (
     <>
-      {/* полоска загрузки вверху окна: заглушка видна ровно, пока идёт загрузка */}
+      {/* полоска загрузки вверху окна: видна ровно, пока идёт загрузка */}
       <div className="navbar" aria-hidden="true" />
-      <header className="head">
-        <div>
-          <p className="eyebrow">Tallinna Tehnoloogiakolledž</p>
-          <h1>
-            Tunniplaan
-            <span className="grp">
-              <span className="skel skel-line" style={{ width: 210, height: 15 }} />
-            </span>
-          </h1>
-        </div>
-        <div className="right">
-          <div className="weekpick">
-            <span>Неделя</span>
-            <div className="weekpick-ctl">
-              <span className="wk-arrow skel-arrow" />
-              <span className="skel skel-select" />
-              <span className="wk-arrow skel-arrow" />
-            </div>
-          </div>
-          <div className="stats">
-            {["уроков", "часов", "учебных дней"].map((label) => (
-              <div className="stat" key={label}>
-                <b>
-                  <span className="skel skel-line" style={{ width: 34, height: 17 }} />
-                </b>
-                <span>{label}</span>
+      <TopSkeleton />
+      <div className="week-wrap" aria-busy="true" aria-label="Загружаю расписание">
+        <section className="grid-card" aria-hidden="true">
+          <div className="grid-scroll">
+            <div className="grid" style={{ "--cols": 5 }}>
+              <div className="grid-head">
+                <span />
+                {SKELETON_DAYS.map((_, i) => (
+                  <div key={i} className="grid-day">
+                    <span className="skel grid-num" />
+                    <span className="grid-dn">
+                      {line(26, 12)}
+                      {line(60, 10, { marginTop: 5 })}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      </header>
-
-      {withToday ? (
-        <div className="today skel-today" aria-hidden="true">
-          <div className="today-top">
-            <div className="today-status">
-              <span className="skel skel-line sm" style={{ width: 150 }} />
-              <span className="skel skel-line" style={{ width: 260, height: 22, marginTop: 9 }} />
-              <span className="skel skel-line sm" style={{ width: 210, marginTop: 9 }} />
+              <div className="grid-body">
+                <div className="grid-axis" style={{ height: (GRID_TO - GRID_FROM) * PX }}>
+                  {HOURS.map((h) => (
+                    <span key={h} style={{ top: (h - GRID_FROM) * PX }}>
+                      {String(h / 60).padStart(2, "0")}:00
+                    </span>
+                  ))}
+                </div>
+                {SKELETON_DAYS.map((blocks, d) => (
+                  <div key={d} className="grid-col" style={{ height: (GRID_TO - GRID_FROM) * PX }}>
+                    {blocks.map(([from, minutes], i) => (
+                      <span
+                        key={i}
+                        className="skel skel-lesson"
+                        style={{ top: (from - GRID_FROM) * PX + 2, height: minutes * PX - 4 }}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="today-meter">
-              <span className="skel skel-line sm" style={{ width: 90, marginLeft: "auto" }} />
-              <span className="skel skel-line" style={{ width: "100%", height: 6, marginTop: 9 }} />
-            </div>
           </div>
-          <div className="today-scroll">
-            <div className="today-track">
-              {[
-                [4, 22],
-                [28, 22],
-                [56, 34],
-              ].map(([left, width]) => (
-                <span key={left} className="skel tb" style={{ left: `${left}%`, width: `${width}%` }} />
+        </section>
+        <section className="week-list" aria-hidden="true">
+          {[0, 1].map((d) => (
+            <div key={d} className="wl-day">
+              {line(170, 16)}
+              {[0, 1, 2].map((i) => (
+                <span key={i} className="skel skel-row" />
               ))}
             </div>
-          </div>
-        </div>
-      ) : null}
-
-      <div className="board">
-        <BoardSkeleton />
+          ))}
+        </section>
       </div>
+    </>
+  );
+}
 
-      <section className="legend">
-        <h2>Предметы недели</h2>
-        <div className="subs">
-          {LEGEND_CARDS.map((i) => (
-            <div className="sub skel-sub" key={i}>
-              <div>
-                <span className="skel skel-line" style={{ width: 128 + ((i * 29) % 52), height: 13 }} />
-                <span className="skel skel-line sm" style={{ width: 88, marginTop: 7 }} />
+/** «Сегодня»: крупная карточка, «Дальше», итоги и план дня. */
+export function TodaySkeleton() {
+  return (
+    <>
+      <div className="navbar" aria-hidden="true" />
+      <TopSkeleton title={280} />
+      <div className="today-grid" aria-busy="true" aria-label="Загружаю расписание">
+        <section className="hero skel-hero" aria-hidden="true">
+          {line(120, 30, { borderRadius: 999 })}
+          <div className="hero-main">
+            {line("70%", 34)}
+            {line("45%", 16, { marginTop: 10 })}
+          </div>
+          <div className="hero-foot">
+            {line(140, 40)}
+            {line("100%", 10, { marginTop: 14, borderRadius: 999 })}
+          </div>
+        </section>
+        <div className="today-side" aria-hidden="true">
+          <section className="panel next">
+            {line(60, 12)}
+            {line("80%", 20, { marginTop: 14 })}
+            {line("60%", 14, { marginTop: 10 })}
+            {line(110, 30, { marginTop: 16, borderRadius: 999 })}
+          </section>
+          <section className="stats-grid">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i}>
+                {line(40, 22)}
+                {line(70, 11, { marginTop: 6 })}
               </div>
-              <div className="side">
-                <span className="skel skel-line sm" style={{ width: 74 }} />
-                <div className="days">
-                  <span className="skel skel-dot" />
-                  <span className="skel skel-dot" />
-                </div>
-              </div>
-            </div>
+            ))}
+          </section>
+        </div>
+      </div>
+      <section className="plan" aria-hidden="true">
+        <div className="plan-head">{line(130, 22)}</div>
+        <div className="skel-plan">
+          {[0, 1, 2, 3].map((i) => (
+            <span key={i} className="skel skel-row" />
           ))}
         </div>
       </section>

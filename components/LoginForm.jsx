@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -29,23 +30,42 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="card" style={{ maxWidth: 420 }}>
-      <h2>Вход администратора</h2>
-      <p className="hint">Загружать и удалять недели может только администратор.</p>
-      <form onSubmit={submit} className="form-row">
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Пароль"
-          autoComplete="current-password"
-          style={{ flex: 1, minWidth: 180 }}
-        />
-        <button className="primary" type="submit" disabled={busy || !password}>
+    <main className="login">
+      <form onSubmit={submit} className="login-card">
+        <span className="brand">
+          <span className="brand-mark" aria-hidden="true">
+            <span />
+          </span>
+          <span className="brand-name">Tunniplaan</span>
+        </span>
+        <div>
+          <h1>Вход в админку</h1>
+          <p className="sub">Только для администратора расписания.</p>
+        </div>
+        <label className="field">
+          <span>Пароль</span>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            aria-invalid={Boolean(error)}
+            className={error ? "invalid" : undefined}
+            autoFocus
+          />
+        </label>
+        {error ? (
+          <p role="alert" className="field-error">
+            {error}
+          </p>
+        ) : null}
+        <button type="submit" className="btn primary wide" disabled={busy || !password}>
           {busy ? "Проверяю…" : "Войти"}
         </button>
+        <Link href="/" className="back">
+          ← К расписанию
+        </Link>
       </form>
-      {error && <div className="msg error">{error}</div>}
-    </div>
+    </main>
   );
 }

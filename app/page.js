@@ -1,25 +1,59 @@
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import WeekSkeleton from "@/components/Skeletons";
-import WeekPage from "@/components/WeekPage";
+import SiteFooter from "@/components/SiteFooter";
+import SiteHeader from "@/components/SiteHeader";
+import { TodaySkeleton } from "@/components/Skeletons";
+import TodayView from "@/components/TodayView";
+import { tallinnClock } from "@/lib/day";
+import { addDays } from "@/lib/lessons";
+import { listSubjects, listWeeksFull } from "@/lib/store";
+import { targetGroup } from "@/lib/tahvel";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Каркас страницы уходит в браузер сразу, не дожидаясь базы: она отвечает
- * то мгновенно, то через несколько секунд (холодный старт Supabase), и всё это
- * время пользователь смотрел на пустой экран. Теперь ожидание закрыто
- * заглушкой, а неделя дорисовывается поверх неё, когда придёт.
+ * Главная — «Сегодня»: что идёт сейчас, что дальше и план дня. Шапка уходит в
+ * браузер сразу, а день дорисовывается, когда ответит база.
  */
 export default async function Page({ searchParams }) {
   const params = await searchParams;
+  // старые ссылки на неделю (/?w=…) ведут теперь на её страницу
+  if (params?.w) redirect(`/week?w=${encodeURIComponent(params.w)}`);
 
   return (
-    <main className="wrap">
-      {/* key: при переходе на другую неделю нужна та же заглушка, а не
-          застывшее расписание предыдущей */}
-      <Suspense key={params?.w ?? ""} fallback={<WeekSkeleton withToday={!params?.w} />}>
-        <WeekPage wanted={params?.w} />
-      </Suspense>
-    </main>
+    <>
+      <SiteHeader active="today" group={targetGroup().code} />
+      <main className="wrap wrap-today">
+        <Suspense fallback={<TodaySkeleton />}>
+          <Today />
+        </Suspense>
+      </main>
+    </>
+  );
+}
+
+async function Today() {
+  const now = tallinnClock();
+  const [all, subjects] = await Promise.all([listWeeksFull(), listSubjects()]);
+  // неделя назад — запас для симуляции времени из админки
+  const from = addDays(now.day, -7);
+  const weeks = all.filter((w) => w.weekEnd >= from);
+
+  if (!weeks.length) {
+    return (
+      <div className="empty-state">
+        <b>Расписание пока не опубликовано</b>
+        Синхронизируйте его в <a href="/admin">админке</a>.
+      </div>
+    );
+  }
+
+  const meta = weeks.findLast((w) => w.weekEnd >= now.day) ?? weeks[0];
+
+  return (
+    <>
+      <TodayView weeks={weeks} subjects={subjects} initialNow={now} />
+      <SiteFooter week={meta} />
+    </>
   );
 }

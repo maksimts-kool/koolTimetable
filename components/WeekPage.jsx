@@ -25,22 +25,14 @@ export default async function WeekPage({ wanted, embed = false }) {
 
   if (!weeks.length) {
     return (
-      <>
-        <header className="head">
-          <div>
-            <p className="eyebrow">Tallinna Tehnoloogiakolledž</p>
-            <h1>Tunniplaan</h1>
-          </div>
-        </header>
-        <div className="empty-state">
-          <b>Пока ни одной недели</b>
-          {embed ? null : (
-            <>
-              Синхронизируйте расписание в <Link href="/admin">админке</Link>.
-            </>
-          )}
-        </div>
-      </>
+      <div className="empty-state">
+        <b>Пока ни одной недели</b>
+        {embed ? null : (
+          <>
+            Синхронизируйте расписание в <Link href="/admin">админке</Link>.
+          </>
+        )}
+      </div>
     );
   }
 

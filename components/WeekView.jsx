@@ -1,164 +1,109 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
-import IcalLink from "@/components/IcalLink";
+import { useEffect, useMemo, useState } from "react";
+import OptSwitch from "@/components/OptSwitch";
 import SimBadge from "@/components/SimBadge";
-import Timetable from "@/components/Timetable";
-import TodayStrip from "@/components/TodayStrip";
+import SiteFooter from "@/components/SiteFooter";
+import SubjectDialog from "@/components/SubjectDialog";
+import useHidden from "@/components/useHidden";
+import useNow from "@/components/useNow";
+import WeekGrid from "@/components/WeekGrid";
 import WeekPicker from "@/components/WeekPicker";
-import { hideSubjects, optionalsIn, parseHidden } from "@/lib/optional";
-
-const STORAGE_KEY = "tunniplaan:hidden";
+import { assignColors } from "@/lib/colors";
+import { isoWeek, plural, ruRange } from "@/lib/format";
+import { hideSubjects, optionalIdOf, optionalsIn } from "@/lib/optional";
 
 /**
- * Страница недели целиком на клиенте: галочка «не хожу» меняет и счётчики в
- * шапке, и сетку, и легенду, и адрес ленты календаря — держать это состояние
- * в одном месте проще, чем синхронизировать половину страницы с сервером.
+ * Страница недели целиком на клиенте: переключатель «хожу на B2» меняет и
+ * счётчики в шапке, и сетку — держать это состояние в одном месте проще.
  *
  * @param subjects названия предметов по всем неделям сразу — по ним считается
  *   палитра, поэтому предмет выглядит одинаково в любой неделе
- * @param initialNow время сервера по Таллину — с ним совпадает первая
- *   отрисовка полосы «сегодня»
  * @param embed страница во фрейме на чужом сайте: без ссылки на админку, а
  *   выбор недели остаётся на /embed
  */
 export default function WeekView({ week, weeks, current, subjects, initialNow, embed = false }) {
-  const [hidden, setHidden] = useState(() => new Set());
-
-  // localStorage читаем после гидрации: на сервере его нет, а разошедшуюся
-  // разметку React бы не простил
-  useEffect(() => {
-    try {
-      setHidden(parseHidden(localStorage.getItem(STORAGE_KEY)));
-    } catch {
-      /* приватный режим — просто показываем всё */
-    }
-  }, []);
+  const [hidden, setAttends] = useHidden();
+  const [selected, setSelected] = useState(null);
+  const clock = useNow(initialNow, 60_000);
 
   const optional = useMemo(() => optionalsIn([week]), [week]);
   const shown = useMemo(() => hideSubjects(week, hidden), [week, hidden]);
+  // Палитра — по предметам всех недель: иначе предмет менял бы цвет при
+  // переходе на соседнюю неделю. Предметы недели добавляем и сами: общий
+  // список мог отстать от только что загруженной недели.
+  const palette = useMemo(
+    () =>
+      assignColors([
+        ...(subjects ?? []),
+        ...week.days.flatMap((d) => d.blocks.map((b) => b.subject)),
+      ]),
+    [week, subjects]
+  );
 
-  function toggle(id, attends) {
-    const next = new Set(hidden);
-    if (attends) next.delete(id);
-    else next.add(id);
-    setHidden(next);
-    try {
-      localStorage.setItem(STORAGE_KEY, [...next].join(","));
-    } catch {
-      /* не сохранилось — на этой сессии всё равно применится */
-    }
-  }
+  // предмет скрыли, пока его карточка открыта, — карточку закрываем
+  const visible = selected && shown.days.some((d) => d.blocks.some((b) => b.subject === selected));
+  useEffect(() => {
+    if (selected && !visible) setSelected(null);
+  }, [selected, visible]);
 
-  const minutes = useTween(shown.lessonCount * 45);
-  const hours =
-    Math.floor(minutes / 60) + (minutes % 60 ? `:${String(minutes % 60).padStart(2, "0")}` : "");
-  const lessons = useTween(shown.lessonCount);
-  const days = useTween(shown.days.length);
+  const blocks = shown.days.reduce((sum, d) => sum + d.blocks.length, 0);
+  const hours = shown.lessonCount;
+
+  const optColor = (o) => {
+    for (const [name, c] of palette) if (optionalIdOf(name) === o.id) return c.bg;
+    return null;
+  };
 
   return (
     <>
-      <header className="head">
+      <section className="page-top rise" style={{ "--i": 0 }}>
         <div>
-          <p className="eyebrow">Tallinna Tehnoloogiakolledž</p>
-          <h1>
-            Tunniplaan
-            <span className="grp rise">
-              {week.group}
-              {week.programme ? ` · ${week.programme}` : ""}
-            </span>
-          </h1>
+          <h1>Неделя {isoWeek(week.weekStart)}</h1>
+          <p className="sub">
+            {ruRange(week.weekStart, week.weekEnd)} · {plural(blocks, "занятие", "занятия", "занятий")} ·{" "}
+            {plural(hours, "ак. час", "ак. часа", "ак. часов")}
+          </p>
         </div>
-        <div className="right">
-          <WeekPicker
-            weeks={weeks}
-            current={current}
-            today={initialNow.day}
-            path={embed ? "/embed" : "/"}
-          />
-          <div className="stats rise">
-            <div className="stat">
-              <b>{lessons}</b>
-              <span>уроков</span>
-            </div>
-            <div className="stat">
-              <b>{hours}</b>
-              <span>часов</span>
-            </div>
-            <div className="stat">
-              <b>{days}</b>
-              <span>учебных дней</span>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {optional.length ? (
-        <div className="optouts">
-          <span className="optlabel">Хожу на</span>
+        <div className="page-tools">
           {optional.map((o) => (
-            <label key={o.id} className={hidden.has(o.id) ? "optout off" : "optout"} title={o.hint}>
-              <input
-                type="checkbox"
-                checked={!hidden.has(o.id)}
-                onChange={(e) => toggle(o.id, e.target.checked)}
-              />
-              <span>{o.label}</span>
-            </label>
+            <OptSwitch
+              key={o.id}
+              option={o}
+              attends={!hidden.has(o.id)}
+              onChange={setAttends}
+              color={optColor(o)}
+            />
           ))}
+          <WeekPicker weeks={weeks} current={current} today={clock.day} path={embed ? "/embed" : "/week"} />
         </div>
+      </section>
+
+      <div className="week-wrap rise" style={{ "--i": 1 }}>
+        <WeekGrid
+          week={shown}
+          palette={palette}
+          selected={selected}
+          onPick={(s) => setSelected((cur) => (cur === s ? null : s))}
+        />
+        <p className="hint-line">Нажми на занятие, чтобы увидеть преподавателя, кабинеты и все занятия предмета на неделе.</p>
+      </div>
+
+      <SiteFooter week={week} embed={embed} />
+
+      {visible ? (
+        <SubjectDialog
+          key={selected}
+          subject={selected}
+          week={shown}
+          color={palette.get(selected)?.bg}
+          today={clock.day}
+          onClose={() => setSelected(null)}
+        />
       ) : null}
-
-      <TodayStrip week={shown} allSubjects={subjects} initialNow={initialNow} />
-
-      <Timetable week={shown} allSubjects={subjects} />
-
-      <footer>
-        <span>Источник: {week.fileName}</span>
-        <span>
-          Обновлено{" "}
-          {new Date(week.uploadedAt).toLocaleDateString("ru-RU")}
-        </span>
-        <IcalLink hide={[...hidden].join(",")} />
-        {embed ? null : <Link href="/admin">Админка</Link>}
-      </footer>
 
       <SimBadge />
     </>
   );
 }
 
-/**
- * Число, которое не прыгает, а докручивается до нового значения: галочка
- * «не хожу» меняет счётчики в шапке, и так видно, что именно поменялось.
- * Первая отрисовка — сразу итоговое число, как его отдал сервер.
- */
-function useTween(value, ms = 450) {
-  const [shown, setShown] = useState(value);
-  const from = useRef(value);
-
-  useEffect(() => {
-    const start = from.current;
-    if (start === value) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      from.current = value;
-      setShown(value);
-      return;
-    }
-    const t0 = performance.now();
-    let frame;
-    const step = (t) => {
-      const k = Math.min((t - t0) / ms, 1);
-      const eased = 1 - (1 - k) ** 3;
-      const next = Math.round(start + (value - start) * eased);
-      from.current = next;
-      setShown(next);
-      if (k < 1) frame = requestAnimationFrame(step);
-    };
-    frame = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frame);
-  }, [value, ms]);
-
-  return shown;
-}
