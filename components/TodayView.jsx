@@ -145,9 +145,7 @@ export default function TodayView({ weeks, subjects, initialNow }) {
     if (isToday) {
       if (past) status = "прошло";
       else if (live) status = "сейчас";
-      else {
-        status = `через ${ruDuration(a - m)}`;
-      }
+      else status = "скоро";
     }
     plan.push({
       type: "lesson",
