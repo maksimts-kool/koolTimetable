@@ -24,7 +24,6 @@ export default function OptSwitch({ option, attends, onChange, color }) {
       </span>
       <span className="optswitch-text">
         <b>{option.toggle ?? option.label}</b>
-        <span>{attends ? "Видно в расписании и календаре" : "Скрыто — экзамен сдан"}</span>
       </span>
       <span className="optswitch-track" aria-hidden="true">
         <span />

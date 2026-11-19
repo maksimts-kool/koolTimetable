@@ -160,7 +160,6 @@ export default function TodayView({ weeks, subjects, initialNow }) {
       live,
       soon: isToday && !past && !live && firstAhead,
       status,
-      pct: live ? ((m - a) / (b - a)) * 100 : 0,
     });
     if (isToday && !past && !live) firstAhead = false;
   });
@@ -170,8 +169,6 @@ export default function TodayView({ weeks, subjects, initialNow }) {
     ? [
         { value: planDay.blocks.length, label: plural(planDay.blocks.length, "занятие", "занятия", "занятий").replace(/^\d+ /, "") },
         { value: lessonsTotal, label: "ак. часов" },
-        { value: planDay.blocks[0].from, label: "начало" },
-        { value: planDay.blocks[planDay.blocks.length - 1].to, label: "конец" },
       ]
     : [];
 
@@ -359,11 +356,6 @@ export default function TodayView({ weeks, subjects, initialNow }) {
                         ) : null}
                         {it.block.room && it.block.teacher ? " · " : null}
                         {it.block.teacher}
-                      </span>
-                    ) : null}
-                    {it.live ? (
-                      <span className="tl-bar" aria-hidden="true">
-                        <span style={{ width: `${it.pct}%` }} />
                       </span>
                     ) : null}
                   </div>

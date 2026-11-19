@@ -131,7 +131,7 @@ export function TodaySkeleton() {
             {line(110, 30, { marginTop: 16, borderRadius: 999 })}
           </section>
           <section className="stats-grid">
-            {[0, 1, 2, 3].map((i) => (
+            {[0, 1].map((i) => (
               <div key={i}>
                 {line(40, 22)}
                 {line(70, 11, { marginTop: 6 })}
